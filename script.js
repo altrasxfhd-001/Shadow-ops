@@ -6,78 +6,94 @@ scene.fog = new THREE.FogExp2(0x020205, 0.015);
 const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
 const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
 
 // ─ حالة اللعبة والتحكم ─
 const gs = {
-    running: false, hp: 100, ammo: 30, score: 0,
-    keys: { w: false, a: false, s: false, d: false }
+    running: false, hp: 100, ammo: 30, reserve: 120, score: 0, wave: 1,
+    keys: { w: false, a: false, s: false, d: false },
+    isMobile: /Android|iPhone/i.test(navigator.userAgent),
+    reloading: false
 };
 
-// ─ بناء العالم ─
-const floor = new THREE.Mesh(
-    new THREE.PlaneGeometry(100, 100),
-    new THREE.MeshStandardMaterial({ color: 0x111111 })
-);
-floor.rotation.x = -Math.PI / 2;
-scene.add(floor);
+// ─ بناء البيئة (من كودك الأصلي) ─
+function initWorld() {
+    const floor = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.MeshStandardMaterial({ color: 0x050505 }));
+    floor.rotation.x = -Math.PI / 2;
+    floor.receiveShadow = true;
+    scene.add(floor);
 
-const light = new THREE.PointLight(0xffffff, 1, 100);
-light.position.set(0, 10, 0);
-scene.add(light);
-scene.add(new THREE.AmbientLight(0x404040));
+    const ambient = new THREE.AmbientLight(0x111122, 0.5);
+    scene.add(ambient);
 
-camera.position.set(0, 1.7, 5);
+    const sun = new THREE.DirectionalLight(0x0088ff, 0.8);
+    sun.position.set(20, 50, 10);
+    sun.castShadow = true;
+    scene.add(sun);
+}
 
-// ─ دعم الكمبيوتر (Keyboard) ─
-window.addEventListener('keydown', (e) => {
-    if (e.key.toLowerCase() in gs.keys) gs.keys[e.key.toLowerCase()] = true;
-    if (e.key.toLowerCase() === 'r') reload();
-});
-window.addEventListener('keyup', (e) => {
-    if (e.key.toLowerCase() in gs.keys) gs.keys[e.key.toLowerCase()] = false;
-});
+// ─ نظام التحكم للكمبيوتر ─
+if (!gs.isMobile) {
+    window.addEventListener('keydown', (e) => { if(e.key.toLowerCase() in gs.keys) gs.keys[e.key.toLowerCase()] = true; });
+    window.addEventListener('keyup', (e) => { if(e.key.toLowerCase() in gs.keys) gs.keys[e.key.toLowerCase()] = false; });
+    
+    window.addEventListener('mousemove', (e) => {
+        if (document.pointerLockElement === renderer.domElement && gs.running) {
+            camera.rotation.y -= e.movementX * 0.002;
+            camera.rotation.x = Math.max(-Math.PI/2, Math.min(Math.PI/2, camera.rotation.x - e.movementY * 0.002));
+        }
+    });
 
-// ─ دعم الماوس (Mouse Look) ─
-window.addEventListener('mousemove', (e) => {
-    if (gs.running) {
-        camera.rotation.y -= e.movementX * 0.002;
-        camera.rotation.x -= e.movementY * 0.002;
+    window.addEventListener('mousedown', () => { if(gs.running) shoot(); });
+}
+
+function shoot() {
+    if (gs.ammo > 0 && !gs.reloading) {
+        gs.ammo--;
+        updateHUD();
+        // هنا يتم إضافة منطق الرصاصة الفعلي من الكود الأصلي
     }
-});
-
-// ─ إصلاح الأزرار (Event Listeners) ─
-function startGame() {
-    document.getElementById('menu').style.display = 'none';
-    gs.running = true;
-    // طلب قفل الماوس عشان التجربة تبقا زي ألعاب الـ FPS
-    renderer.domElement.requestPointerLock(); 
 }
 
-function reload() {
-    console.log("Reloading...");
-}
-
-// إضافة وظائف المتجر المفقودة
-window.buyAmmo = () => { console.log("Ammo bought"); };
-window.buyHealth = () => { gs.hp = 100; updateHUD(); };
-window.openShop = () => { gs.running = false; document.getElementById('shop-ui').style.display = 'flex'; document.exitPointerLock(); };
-window.closeShop = () => { gs.running = true; document.getElementById('shop-ui').style.display = 'none'; };
-
-function updateHUD() {
-    document.getElementById('hp-num').innerText = gs.hp;
-}
-
-// ─ حلقة التحريك ─
-function animate() {
-    requestAnimationFrame(animate);
-    if (gs.running) {
-        const speed = 0.1;
+function updateMovement() {
+    if (!gs.running) return;
+    const speed = 0.15;
+    if (!gs.isMobile) {
         if (gs.keys.w) camera.translateZ(-speed);
         if (gs.keys.s) camera.translateZ(speed);
         if (gs.keys.a) camera.translateX(-speed);
         if (gs.keys.d) camera.translateX(speed);
     }
+    camera.position.y = 1.7; // تثبيت الارتفاع
+}
+
+function startGame() {
+    document.getElementById('menu').style.display = 'none';
+    gs.running = true;
+    initWorld();
+    if (!gs.isMobile) renderer.domElement.requestPointerLock();
+}
+
+function updateHUD() {
+    document.getElementById('hp-fill').style.width = gs.hp + "%";
+    document.getElementById('hp-num').innerText = Math.round(gs.hp);
+    document.getElementById('ammo-main').innerText = gs.ammo;
+    document.getElementById('score-num').innerText = gs.score;
+}
+
+function animate() {
+    requestAnimationFrame(animate);
+    if (gs.running) {
+        updateMovement();
+    }
     renderer.render(scene, camera);
 }
+
 animate();
+
+// التعامل مع تغيير حجم الشاشة
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
