@@ -1,37 +1,59 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8 glass">
+    <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>SHADOW OPS - PC & MOBILE</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-    <canvas id="canvas"></canvas>
-    <div id="hud">
-        <div id="crosshair"><div class="ch-h"></div><div class="ch-v"></div></div>
-        <div id="hp-bar"><div id="hp-fill"></div><div id="hp-num">100</div></div>
+
+<canvas id="canvas"></canvas>
+
+<div id="hud">
+    <div id="crosshair"><div class="ch-h"></div><div class="ch-v"></div></div>
+    
+    <div id="hp-bar"><div id="hp-fill"></div><div id="hp-num">100</div></div>
+    
+    <div id="stats-left">
         <div id="ammo-ui"><span id="ammo-main">30</span>/<span id="ammo-res">120</span></div>
+        <div id="grenade-ui">💣 <span id="grenade-num">3</span></div>
+    </div>
+
+    <div id="stats-right">
         <div id="score-ui">SCORE: <span id="score-num">0</span></div>
         <div id="wave-ui">WAVE <span id="wave-num">1</span></div>
-        <div id="joy-move"></div>
-        <div id="joy-look"></div>
-        <button id="shoot-btn">🔥</button>
-        <button id="reload-btn">🔄</button>
     </div>
 
-    <div id="menu">
-        <h1>SHADOW OPS</h1>
-        <p>CORE i5 ENHANCED</p>
-        <button onclick="startGame()">INITIALIZE MISSION</button>
-    </div>
+    <div id="joy-move"></div>
+    <div id="joy-look"></div>
+    <button id="shoot-btn">🔥</button>
+    <button id="reload-btn" onclick="gs.reloading=true">🔄</button>
+    <button id="grenade-btn" onclick="throwGrenade()">💣</button>
+    <button id="shop-open-btn" onclick="openShop()">🛒</button>
+</div>
 
-    <div id="gameover">
-        <h2>MISSION FAILED</h2>
-        <button onclick="location.reload()">RETRY</button>
-    </div>
+<div id="menu">
+    <h1>SHADOW OPS</h1>
+    <p>CORE i5 ENHANCED EDITION</p>
+    <button id="start-btn" onclick="startGame()">INITIALIZE MISSION</button>
+</div>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-    <script src="script.js"></script>
+<div id="gameover">
+    <h2>MISSION FAILED</h2>
+    <button onclick="retryGame()">RETRY</button>
+</div>
+
+<div id="shop-ui">
+    <div class="shop-container">
+        <h2>⚔️ المتجر العسكري ⚔️</h2>
+        <button onclick="buyAmmo()">شراء ذخيرة (400)</button>
+        <button onclick="buyHealth()">شراء صحة (600)</button>
+        <button onclick="closeShop()">إغلاق</button>
+    </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="script.js"></script>
 </body>
 </html>
