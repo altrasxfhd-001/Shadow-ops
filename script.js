@@ -7,97 +7,77 @@ const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerH
 const renderer = new THREE.WebGLRenderer({ canvas: document.getElementById('canvas'), antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-renderer.shadowMap.enabled = true;
 
-// ─ نظام الصوت ─
-let actx;
-function initAudio() { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); }
-
-// ─ حالة اللعبة ─
+// ─ حالة اللعبة والتحكم ─
 const gs = {
-    running: false, hp: 100, maxHp: 100, ammo: 30, reserve: 120, score: 0, 
-    wave: 1, kills: 0, reloading: false, auto: false
+    running: false, hp: 100, ammo: 30, score: 0,
+    keys: { w: false, a: false, s: false, d: false }
 };
 
 // ─ بناء العالم ─
-const floorGeo = new THREE.PlaneGeometry(125, 125);
-const floorMat = new THREE.MeshStandardMaterial({ color: 0x050505 });
-const floor = new THREE.Mesh(floorGeo, floorMat);
+const floor = new THREE.Mesh(
+    new THREE.PlaneGeometry(100, 100),
+    new THREE.MeshStandardMaterial({ color: 0x111111 })
+);
 floor.rotation.x = -Math.PI / 2;
-floor.receiveShadow = true;
 scene.add(floor);
 
-const sun = new THREE.DirectionalLight(0x0088ff, 0.8);
-sun.position.set(20, 50, 10);
-scene.add(sun);
-scene.add(new THREE.AmbientLight(0x111122, 0.5));
+const light = new THREE.PointLight(0xffffff, 1, 100);
+light.position.set(0, 10, 0);
+scene.add(light);
+scene.add(new THREE.AmbientLight(0x404040));
 
 camera.position.set(0, 1.7, 5);
 
-// ─ الدوال الناقصة (التي تم إصلاحها) ─
+// ─ دعم الكمبيوتر (Keyboard) ─
+window.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() in gs.keys) gs.keys[e.key.toLowerCase()] = true;
+    if (e.key.toLowerCase() === 'r') reload();
+});
+window.addEventListener('keyup', (e) => {
+    if (e.key.toLowerCase() in gs.keys) gs.keys[e.key.toLowerCase()] = false;
+});
 
-function resetGame() {
-    gs.hp = 100;
-    gs.score = 0;
-    gs.ammo = 30;
-    gs.running = true;
-    updateHUD();
-}
+// ─ دعم الماوس (Mouse Look) ─
+window.addEventListener('mousemove', (e) => {
+    if (gs.running) {
+        camera.rotation.y -= e.movementX * 0.002;
+        camera.rotation.x -= e.movementY * 0.002;
+    }
+});
 
+// ─ إصلاح الأزرار (Event Listeners) ─
 function startGame() {
-    initAudio();
     document.getElementById('menu').style.display = 'none';
-    resetGame();
+    gs.running = true;
+    // طلب قفل الماوس عشان التجربة تبقا زي ألعاب الـ FPS
+    renderer.domElement.requestPointerLock(); 
 }
 
-function retryGame() {
-    document.getElementById('gameover').style.display = 'none';
-    startGame();
+function reload() {
+    console.log("Reloading...");
 }
+
+// إضافة وظائف المتجر المفقودة
+window.buyAmmo = () => { console.log("Ammo bought"); };
+window.buyHealth = () => { gs.hp = 100; updateHUD(); };
+window.openShop = () => { gs.running = false; document.getElementById('shop-ui').style.display = 'flex'; document.exitPointerLock(); };
+window.closeShop = () => { gs.running = true; document.getElementById('shop-ui').style.display = 'none'; };
 
 function updateHUD() {
     document.getElementById('hp-num').innerText = gs.hp;
-    document.getElementById('hp-fill').style.width = gs.hp + "%";
-    document.getElementById('ammo-main').innerText = gs.ammo;
-    document.getElementById('score-num').innerText = gs.score;
-}
-
-// دوال المتجر والأزرار
-function buyAmmo() { if(gs.score >= 400) { gs.reserve += 30; gs.score -= 400; updateHUD(); } }
-function buyHealth() { if(gs.score >= 600) { gs.hp = 100; gs.score -= 600; updateHUD(); } }
-function throwGrenade() { console.log("Grenade Thrown!"); }
-function deployMercenary() { console.log("Mercenary Deployed!"); }
-function toggleAuto() { 
-    gs.auto = !gs.auto; 
-    const btn = document.getElementById('auto-btn');
-    btn.innerText = gs.auto ? "AUTO ON" : "AUTO OFF";
-    btn.classList.toggle('on');
-}
-
-function openShop() {
-    gs.running = false;
-    document.getElementById('shop-ui').style.display = 'flex';
-}
-
-function closeShop() {
-    gs.running = true;
-    document.getElementById('shop-ui').style.display = 'none';
 }
 
 // ─ حلقة التحريك ─
 function animate() {
     requestAnimationFrame(animate);
     if (gs.running) {
-        // هنا تضيف حركة الأعداء واللاعب لاحقاً
+        const speed = 0.1;
+        if (gs.keys.w) camera.translateZ(-speed);
+        if (gs.keys.s) camera.translateZ(speed);
+        if (gs.keys.a) camera.translateX(-speed);
+        if (gs.keys.d) camera.translateX(speed);
     }
     renderer.render(scene, camera);
 }
-
 animate();
-
-// معالجة تغيير حجم النافذة
-window.addEventListener('resize', () => {
-    camera.aspect = window.innerWidth / window.innerHeight;
-    camera.updateProjectionMatrix();
-    renderer.setSize(window.innerWidth, window.innerHeight);
-});
