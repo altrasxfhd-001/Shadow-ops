@@ -1,5 +1,5 @@
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; touch-action: none; user-select: none; }
+body { background: #000; overflow: hidden; font-family: 'Courier New', monospace; touch-action: none; user-select: none; direction: rtl; }
 #canvas { display: block; width: 100vw; height: 100vh; }
 
 /* HUD Styling */
@@ -15,30 +15,33 @@ body { background: #000; overflow: hidden; font-family: 'Courier New', monospace
 #hitmarker { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); opacity: 0; transition: opacity 0.1s; font-size: 24px; color: #ff4444; text-shadow: 0 0 12px #ff0000; font-weight: bold; }
 
 /* ─ HP محسن ─ */
-#hp-wrap { position: absolute; bottom: 105px; left: 16px; width: 160px; pointer-events: none; }
+#hp-wrap { position: absolute; top: 18px; left: 16px; width: 160px; pointer-events: none; }
 #hp-title { font-size: 10px; color: #888; letter-spacing: 4px; margin-bottom: 6px; text-transform: uppercase; }
 #hp-bar { height: 6px; background: rgba(255, 255, 255, 0.05); border-radius: 3px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.15); box-shadow: inset 0 0 10px rgba(0,0,0,0.5); }
 #hp-fill { height: 100%; width: 100%; border-radius: 3px; background: linear-gradient(90deg, #00ff88, #00ffc8); box-shadow: 0 0 12px #00ff88; transition: width 0.3s, background 0.3s; }
-#hp-num { font-size: 24px; font-weight: bold; color: #00ff88; margin-top: 5px; text-shadow: 0 0 15px #00ff88; }
+#hp-num { font-size: 18px; font-weight: bold; color: #00ff88; margin-top: 5px; text-shadow: 0 0 8px #00ff88; }
 
-/* ─ AMMO محسن ─ */
-#ammo-wrap { position: absolute; bottom: 105px; right: 16px; text-align: right; pointer-events: none; }
-#ammo-main { font-size: 48px; font-weight: bold; color: #fff; line-height: 1; letter-spacing: -2px; text-shadow: 0 0 15px rgba(255, 180, 0, 0.6); }
-#ammo-res { font-size: 16px; color: rgba(255, 180, 0, 0.7); margin-top: 3px; }
-#reload-bar { width: 70px; height: 4px; background: rgba(255, 200, 50, 0.1); border-radius: 2px; margin-top: 8px; margin-left: auto; overflow: hidden; display: none; border: 1px solid rgba(255,200,50,0.2); }
-#reload-prog { height: 100%; width: 0%; background: linear-gradient(90deg, #ffc832, #ffdd55); box-shadow: 0 0 10px #ffc832; border-radius: 2px; transition: width 1.4s linear; }
+/* ─ AMMO محسن (moved to top-right) ─ */
+#weapon-and-ammo { position: fixed; top: 16px; right: 16px; text-align: left; pointer-events: none; display:flex; gap:14px; align-items:center; z-index:30; }
+#weapon { width: 220px; pointer-events: none; transform-origin: top right; transition: transform 0.09s; }
+#ammo-wrap { text-align: right; pointer-events: none; }
+#ammo-main { font-size: 28px; font-weight: bold; color: #fff; line-height: 1; letter-spacing: -2px; text-shadow: 0 0 10px rgba(255, 180, 0, 0.6); }
+#ammo-res { font-size: 14px; color: rgba(255, 180, 0, 0.7); margin-top: 3px; }
+#reload-bar { width: 86px; height: 6px; background: rgba(255, 200, 50, 0.08); border-radius: 3px; margin-top: 6px; margin-left: auto; overflow: hidden; display: none; border: 1px solid rgba(255,200,50,0.2); }
+#reload-prog { height: 100%; width: 0%; background: linear-gradient(90deg, #ffc832, #ffdd55); box-shadow: 0 0 10px #ffc832; border-radius: 3px; transition: width 1.4s linear; }
 
 /* ─ SCORE محسن ─ */
 #score-wrap { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); text-align: center; background: rgba(0,0,0,0.5); padding: 8px 20px; border-radius: 8px; border: 1px solid rgba(0,200,255,0.3); pointer-events: none; }
-#score-num { font-size: 28px; color: #fff; font-weight: bold; letter-spacing: 5px; text-shadow: 0 0 15px rgba(0, 200, 255, 0.8); }
-#wave-txt { font-size: 11px; color: #0af; letter-spacing: 5px; margin-top: 3px; text-shadow: 0 0 8px rgba(0,200,255,0.5); }
+#score-num { font-size: 20px; color: #fff; font-weight: bold; letter-spacing: 4px; text-shadow: 0 0 10px rgba(0, 200, 255, 0.8); }
+#wave-txt { font-size: 11px; color: #0af; letter-spacing: 3px; margin-top: 3px; text-shadow: 0 0 8px rgba(0,200,255,0.5); }
 
-#killfeed { position: absolute; top: 60px; right: 14px; text-align: right; pointer-events: none; }
+/* Killfeed */
+#killfeed { position: absolute; top: 60px; right: 14px; text-align: right; pointer-events: none; width: 260px; }
 .kf { font-size: 13px; color: #ff5555; text-shadow: 0 0 8px rgba(255,0,0,0.5); margin-bottom: 4px; animation: kfade 2.5s forwards; background: rgba(0,0,0,0.4); padding: 3px 8px; border-radius: 4px; }
 @keyframes kfade { 0% { opacity: 1; transform: translateX(0); } 75% { opacity: 1; } 100% { opacity: 0; transform: translateX(14px); } }
 
 #dmg-flash { position: fixed; inset: 0; background: radial-gradient(ellipse at center, transparent 30%, rgba(255, 0, 0, 0.6) 100%); opacity: 0; pointer-events: none; transition: opacity 0.08s; z-index: 20; }
-#fire-flash { position: fixed; inset: 0; background: rgba(255, 180, 30, 0.1); opacity: 0; pointer-events: none; z-index: 19; }
+#fire-flash { position: fixed; inset: 0; background: rgba(255, 180, 30, 0.08); opacity: 0; pointer-events: none; z-index: 19; }
 #vignette { position: fixed; inset: 0; background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.7) 100%); pointer-events: none; z-index: 9; }
 
 .corner { position: fixed; width: 28px; height: 28px; opacity: 0.4; z-index: 11; pointer-events: none; }
@@ -98,20 +101,13 @@ body { background: #000; overflow: hidden; font-family: 'Courier New', monospace
 #wave-notif { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); font-size: 40px; font-weight: 900; color: #fff; letter-spacing: 8px; text-shadow: 0 0 30px rgba(0, 200, 255, 0.9); opacity: 0; pointer-events: none; z-index: 50; transition: opacity 0.4s; }
 #power-up-ui { position: fixed; top: 120px; left: 50%; transform: translateX(-50%); font-size: 14px; color: #ff0; letter-spacing: 3px; opacity: 0; transition: opacity 0.3s; text-shadow: 0 0 15px #ff0; z-index: 10; font-weight: bold; }
 
-/* Mobile Only Controls show on touch devices */
 @media (pointer: coarse) {
     #joy-area, #look-area, #fire-btn, #reload-btn, #grenade-btn, #mercenary-btn, #auto-btn { display: block; }
-    /* Hide some desktop-only HUD choices if needed */
 }
 
-/* Hide mobile controls on fine pointers (desktop) */
 @media (pointer: fine) {
     #joy-area, #look-area, #fire-btn, #reload-btn, #grenade-btn, #mercenary-btn, #auto-btn { display: none !important; }
 }
 
-/* Weapon styling */
-#weapon { position: fixed; bottom: -8px; right: -8px; width: 240px; z-index: 15; pointer-events: none; filter: drop-shadow(0 4px 20px rgba(0, 0, 0, 0.9)); transform-origin: bottom right; transition: transform 0.09s; }
-
-/* Small helper */
 button { pointer-events: auto; padding: 10px 14px; background: transparent; border: 2px solid #0ff; color: #0ff; cursor: pointer; font-weight: bold; transition: 0.2s; border-radius: 6px; }
 button:hover { background: #0ff; color: #000; }
