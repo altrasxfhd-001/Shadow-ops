@@ -1,146 +1,37 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-    <meta charset="UTF-8">
+    <meta charset="UTF-8 glass">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>SHADOW OPS - ENHANCED GRAPHICS</title>
+    <title>SHADOW OPS - PC & MOBILE</title>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<button id="shop-open-btn" onclick="openShop()">🛒 المتجر</button>
-
-<div id="shop-ui">
-    <div class="shop-container">
-        <h2>⚔️ المتجر العسكري ⚔️</h2>
-        
-        <div class="shop-item">
-            <div class="shop-item-info">
-                <div class="shop-item-name">🔫 ذخيرة (30 طلقة)</div>
-                <div class="shop-item-price">💰 400 نقطة</div>
-            </div>
-            <button class="shop-item-btn" onclick="buyAmmo()">شراء</button>
-        </div>
-        
-        <div class="shop-item">
-            <div class="shop-item-info">
-                <div class="shop-item-name">💚 حزمة صحية كاملة</div>
-                <div class="shop-item-price">💰 600 نقطة</div>
-            </div>
-            <button class="shop-item-btn" onclick="buyHealth()">شراء</button>
-        </div>
-
-        <div class="shop-item">
-            <div class="shop-item-info">
-                <div class="shop-item-name">⚡ تعزيز السرعة (20ث)</div>
-                <div class="shop-item-price">💰 500 نقطة</div>
-            </div>
-            <button class="shop-item-btn" onclick="buySpeedBoost()">شراء</button>
-        </div>
-
-        <div class="shop-item">
-            <div class="shop-item-info">
-                <div class="shop-item-name">🛡️ درع تكتيكي (20ث)</div>
-                <div class="shop-item-price">💰 700 نقطة</div>
-            </div>
-            <button class="shop-item-btn" onclick="buyArmor()">شراء</button>
-        </div>
-
-        <button class="shop-close" onclick="closeShop()">إغلاق المتجر</button>
-    </div>
-</div>
-
-<canvas id="canvas"></canvas>
-<div id="vignette"></div>
-<div id="dmg-flash"></div>
-<div id="fire-flash"></div>
-
-<div id="hud">
-    <div id="crosshair">
-        <div class="ch-h"></div>
-        <div class="ch-v"></div>
-        <div class="ch-dot"></div>
-    </div>
-    <div id="hitmarker">✕</div>
-    
-    <div id="hp-wrap">
-        <div id="hp-title">HEALTH</div>
-        <div id="hp-bar"><div id="hp-fill"></div></div>
-        <div id="hp-num">100</div>
+    <canvas id="canvas"></canvas>
+    <div id="hud">
+        <div id="crosshair"><div class="ch-h"></div><div class="ch-v"></div></div>
+        <div id="hp-bar"><div id="hp-fill"></div><div id="hp-num">100</div></div>
+        <div id="ammo-ui"><span id="ammo-main">30</span>/<span id="ammo-res">120</span></div>
+        <div id="score-ui">SCORE: <span id="score-num">0</span></div>
+        <div id="wave-ui">WAVE <span id="wave-num">1</span></div>
+        <div id="joy-move"></div>
+        <div id="joy-look"></div>
+        <button id="shoot-btn">🔥</button>
+        <button id="reload-btn">🔄</button>
     </div>
 
-    <div id="ammo-wrap">
-        <div id="ammo-main">30</div>
-        <div id="ammo-res">/ 120</div>
-        <div id="reload-bar"><div id="reload-prog"></div></div>
+    <div id="menu">
+        <h1>SHADOW OPS</h1>
+        <p>CORE i5 ENHANCED</p>
+        <button onclick="startGame()">INITIALIZE MISSION</button>
     </div>
 
-    <div id="score-wrap">
-        <div id="score-num">0</div>
-        <div id="wave-txt">WAVE 1</div>
+    <div id="gameover">
+        <h2>MISSION FAILED</h2>
+        <button onclick="location.reload()">RETRY</button>
     </div>
 
-    <div id="killfeed"></div>
-    <div id="killstreak-ui"></div>
-    <div id="combo-counter"></div>
-    <div id="achievement-popup"></div>
-
-    <div class="corner tl"></div>
-    <div class="corner tr"></div>
-    <div class="corner bl"></div>
-    <div class="corner br"></div>
-</div>
-
-<div id="minimap">
-    <canvas id="minimap-canvas" width="110" height="110"></canvas>
-</div>
-
-<div id="joy-area">
-    <div id="joy-ring"><div id="joy-knob"></div></div>
-</div>
-
-<div id="look-area"></div>
-
-<button id="fire-btn">🔥</button>
-<button id="reload-btn">↺</button>
-<button id="grenade-btn" onclick="throwGrenade()">💣</button>
-<button id="mercenary-btn" onclick="deployMercenary()">👥</button>
-<button id="auto-btn" onclick="toggleAuto()">AUTO OFF</button>
-
-<svg id="weapon" viewBox="0 0 230 150" xmlns="http://www.w3.org/2000/svg">
-    <defs>
-        <linearGradient id="gunGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" style="stop-color:#333;stop-opacity:1" />
-            <stop offset="100%" style="stop-color:#111;stop-opacity:1" />
-        </linearGradient>
-    </defs>
-    <path d="M140 100 L210 100 L220 130 L130 145 Z" fill="url(#gunGrad)" />
-    <rect x="150" y="85" width="75" height="22" rx="4" fill="#222" />
-    <rect x="160" y="88" width="60" height="6" rx="2" fill="#333" />
-    <circle cx="215" cy="95" r="3" fill="#0ff" style="filter:blur(2px)" />
-</svg>
-
-<div id="menu">
-    <h1>SHADOW OPS</h1>
-    <p>ULTRA MOBILE FPS</p>
-    <button id="start-btn" onclick="startGame()">INITIALIZE MISSION</button>
-    <div class="m-hint">
-        WASD: MOVE | CLICK: FIRE | R: RELOAD | G: GRENADE | M: MERCENARY<br>
-        TOUCH CONTROLS ENABLED FOR MOBILE
-    </div>
-</div>
-
-<div id="gameover">
-    <h2>MISSION FAILED</h2>
-    <div class="go-r">TOTAL KILLS: 0</div>
-    <div class="go-s">SCORE: 0</div>
-    <button id="retry-btn" onclick="retryGame()">REDEPLOY</button>
-</div>
-
-<div id="wave-notif">WAVE 1</div>
-<div id="power-up-ui">POWER-UP ACTIVATED</div>
-
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
-<script src="script.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="script.js"></script>
 </body>
 </html>
