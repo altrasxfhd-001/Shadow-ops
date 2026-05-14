@@ -1,0 +1,2961 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>SHADOW OPS - ENHANCED GRAPHICS</title>
+<style>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    -webkit-tap-highlight-color: transparent;
+}
+
+body {
+    background: #000;
+    overflow: hidden;
+    font-family: 'Courier New', monospace;
+    touch-action: none;
+    user-select: none;
+}
+
+#canvas {
+    display: block;
+    width: 100vw;
+    height: 100vh;
+}
+
+#hud {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 10;
+}
+
+/* ─ CROSSHAIR محسن ─ */
+#crosshair {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40px;
+    height: 40px;
+}
+
+.ch-h, .ch-v {
+    position: absolute;    background: rgba(0, 255, 255, 0.9);    border-radius: 1px;
+    box-shadow: 0 0 8px #0ff, 0 0 16px #0ff;
+}
+
+.ch-h {
+    width: 18px;
+    height: 2px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.ch-v {
+    width: 2px;
+    height: 18px;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+}
+
+.ch-dot {
+    position: absolute;
+    width: 3px;
+    height: 3px;
+    background: #0ff;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border-radius: 50%;
+    box-shadow: 0 0 8px #0ff, 0 0 16px #0ff;
+}
+
+#hitmarker {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+    transition: opacity 0.1s;
+    font-size: 24px;
+    color: #ff4444;
+    text-shadow: 0 0 12px #ff0000;
+    font-weight: bold;
+}
+
+/* ─ HP محسن - فوق زر القنابل ─ */
+#hp-wrap {
+    position: absolute;
+    right: 18px;    bottom: 205px;
+    width: 140px;    text-align: right;
+}
+
+#hp-title {
+    font-size: 9px;
+    color: #888;
+    letter-spacing: 3px;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+}
+
+#hp-bar {
+    height: 5px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 3px;
+    overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+}
+
+#hp-fill {
+    height: 100%;
+    width: 100%;
+    border-radius: 3px;
+    background: linear-gradient(90deg, #00ff88, #00ffc8);
+    box-shadow: 0 0 12px #00ff88;
+    transition: width 0.3s, background 0.3s;
+}
+
+#hp-num {
+    font-size: 20px;
+    font-weight: bold;
+    color: #00ff88;
+    margin-top: 3px;
+    text-shadow: 0 0 15px #00ff88;
+}
+
+/* ─ AMMO محسن و مرفوع للأعلى ─ */
+#ammo-wrap {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    text-align: right;
+}
+
+#ammo-main {
+    font-size: 48px;
+    font-weight: bold;    color: #fff;
+    line-height: 1;
+    letter-spacing: -2px;    text-shadow: 0 0 15px rgba(255, 180, 0, 0.6);
+}
+
+#ammo-res {
+    font-size: 16px;
+    color: rgba(255, 180, 0, 0.7);
+    margin-top: 3px;
+}
+
+#reload-bar {
+    width: 70px;
+    height: 4px;
+    background: rgba(255, 200, 50, 0.1);
+    border-radius: 2px;
+    margin-top: 8px;
+    margin-left: auto;
+    overflow: hidden;
+    display: none;
+    border: 1px solid rgba(255,200,50,0.2);
+}
+
+#reload-prog {
+    height: 100%;
+    width: 0%;
+    background: linear-gradient(90deg, #ffc832, #ffdd55);
+    box-shadow: 0 0 10px #ffc832;
+    border-radius: 2px;
+}
+
+/* ─ WEAPON مرفوع للأعلى ─ */
+#weapon {
+    position: fixed;
+    top: 90px;
+    right: 10px;
+    width: 160px;
+    z-index: 15;
+    pointer-events: none;
+    filter: drop-shadow(0 4px 10px rgba(0, 0, 0, 0.7));
+    transform-origin: center right;
+    transition: transform 0.09s;
+}
+
+/* ─ SCORE محسن ─ */
+#score-wrap {
+    position: absolute;
+    top: 16px;
+    left: 50%;    transform: translateX(-50%);
+    text-align: center;
+    background: rgba(0,0,0,0.5);
+    padding: 8px 20px;    border-radius: 8px;
+    border: 1px solid rgba(0,200,255,0.3);
+}
+
+#score-num {
+    font-size: 28px;
+    color: #fff;
+    font-weight: bold;
+    letter-spacing: 5px;
+    text-shadow: 0 0 15px rgba(0, 200, 255, 0.8);
+}
+
+#wave-txt {
+    font-size: 11px;
+    color: #0af;
+    letter-spacing: 5px;
+    margin-top: 3px;
+    text-shadow: 0 0 8px rgba(0,200,255,0.5);
+}
+
+#killfeed {
+    position: absolute;
+    top: 60px;
+    left: 14px;
+    text-align: left;
+}
+
+.kf {
+    font-size: 13px;
+    color: #ff5555;
+    text-shadow: 0 0 8px rgba(255,0,0,0.5);
+    margin-bottom: 4px;
+    animation: kfade 2.5s forwards;
+    background: rgba(0,0,0,0.4);
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+@keyframes kfade {
+    0% { opacity: 1; transform: translateX(0); }
+    75% { opacity: 1; }
+    100% { opacity: 0; transform: translateX(-14px); }
+}
+
+#dmg-flash {
+    position: fixed;    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 30%, rgba(255, 0, 0, 0.6) 100%);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.08s;    z-index: 20;
+}
+
+#fire-flash {
+    position: fixed;
+    inset: 0;
+    background: rgba(255, 180, 30, 0.1);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 19;
+}
+
+#vignette {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 40%, rgba(0, 0, 0, 0.7) 100%);
+    pointer-events: none;
+    z-index: 9;
+}
+
+.corner {
+    position: fixed;
+    width: 28px;
+    height: 28px;
+    opacity: 0.4;
+    z-index: 11;
+    pointer-events: none;
+}
+
+.tl { top: 12px; left: 12px; border-top: 2px solid #0af; border-left: 2px solid #0af; }
+.tr { top: 12px; right: 12px; border-top: 2px solid #0af; border-right: 2px solid #0af; }
+.bl { bottom: 12px; left: 12px; border-bottom: 2px solid #0af; border-left: 2px solid #0af; }
+.br { bottom: 12px; right: 12px; border-bottom: 2px solid #0af; border-right: 2px solid #0af; }
+
+/* ─ CONTROLS ─ */
+#joy-area {
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    width: 48vw;
+    height: 48vw;
+    max-width: 210px;
+    max-height: 210px;
+    z-index: 30;
+    pointer-events: all;
+    display: none; /* إخفاء للكمبيوتر */
+}
+
+#joy-ring {
+    position: absolute;    bottom: 20px;
+    left: 20px;
+    width: 130px;
+    height: 130px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.03);
+    border: 2.5px solid rgba(255, 255, 255, 0.25);
+    backdrop-filter: blur(8px);
+    box-shadow: 0 0 20px rgba(0,150,255,0.2);
+}
+
+#joy-knob {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(255, 255, 255, 0.35), rgba(0, 180, 255, 0.15));
+    border: 2.5px solid rgba(0, 200, 255, 0.7);
+    box-shadow: 0 0 20px rgba(0, 200, 255, 0.4), inset 0 0 10px rgba(0,200,255,0.2);
+    transform: translate(-50%, -50%);
+}
+
+#look-area {
+    position: fixed;
+    right: 0;
+    top: 0;
+    width: 52vw;
+    height: 100vh;
+    z-index: 25;
+    pointer-events: all;
+    display: none; /* إخفاء للكمبيوتر */
+}
+
+#fire-btn {
+    position: fixed;
+    right: 18px;
+    bottom: 20px;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(255, 80, 80, 0.6), rgba(140, 0, 0, 0.4));
+    border: 3px solid rgba(255, 70, 70, 0.7);
+    font-size: 32px;
+    display: none; /* إخفاء للكمبيوتر */
+    align-items: center;    justify-content: center;
+    z-index: 35;
+    pointer-events: all;
+    cursor: pointer;    box-shadow: 0 0 30px rgba(255, 50, 50, 0.5), inset 0 0 15px rgba(255,100,100,0.2);
+    backdrop-filter: blur(8px);
+    transition: transform 0.06s, box-shadow 0.06s;
+}
+
+#fire-btn:active {
+    transform: scale(0.85);
+    box-shadow: 0 0 45px rgba(255, 50, 50, 0.9);
+}
+
+#reload-btn {
+    position: fixed;
+    right: 126px;
+    bottom: 40px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: rgba(255, 200, 50, 0.12);
+    border: 2px solid rgba(255, 200, 50, 0.5);
+    font-size: 24px;
+    display: none; /* إخفاء للكمبيوتر */
+    align-items: center;
+    justify-content: center;
+    z-index: 35;
+    pointer-events: all;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: transform 0.1s;
+    box-shadow: 0 0 15px rgba(255,200,50,0.2);
+}
+
+#reload-btn:active {
+    transform: scale(0.88);
+}
+
+#grenade-btn {
+    position: fixed;
+    right: 18px;
+    bottom: 130px;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(0, 255, 100, 0.35), rgba(0, 80, 0, 0.35));
+    border: 2px solid rgba(0, 255, 100, 0.6);
+    font-size: 24px;
+    display: none; /* إخفاء للكمبيوتر */
+    align-items: center;
+    justify-content: center;
+    z-index: 35;
+    pointer-events: all;    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: transform 0.1s;
+    box-shadow: 0 0 15px rgba(0,255,100,0.2);
+}
+
+#grenade-btn:active {
+    transform: scale(0.88);
+}
+
+#mercenary-btn {
+    position: fixed;
+    right: 126px;
+    bottom: 110px;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 35%, rgba(0, 255, 0, 0.35), rgba(0, 50, 0, 0.35));
+    border: 2px solid rgba(0, 255, 0, 0.6);
+    font-size: 16px;
+    display: none; /* إخفاء للكمبيوتر */
+    align-items: center;
+    justify-content: center;
+    z-index: 35;
+    pointer-events: all;
+    cursor: pointer;
+    backdrop-filter: blur(6px);
+    transition: transform 0.1s;
+    box-shadow: 0 0 15px rgba(0,255,0,0.2);
+    opacity: 0.5;
+}
+
+#mercenary-btn:active {
+    transform: scale(0.88);
+}
+
+#auto-btn {
+    position: fixed;
+    left: 50%;
+    bottom: 24px;
+    transform: translateX(-50%);
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 10px;
+    letter-spacing: 3px;
+    background: rgba(255, 255, 255, 0.05);    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: rgba(255, 255, 255, 0.45);
+    z-index: 35;
+    pointer-events: all;
+    cursor: pointer;    transition: all 0.2s;
+    backdrop-filter: blur(6px);
+    display: none; /* إخفاء للكمبيوتر */
+}
+
+#auto-btn.on {
+    background: rgba(0, 200, 255, 0.15);
+    border-color: rgba(0, 200, 255, 0.6);
+    color: #0af;
+    box-shadow: 0 0 15px rgba(0, 200, 255, 0.3);
+}
+
+/* ─ MINIMAP ─ */
+#minimap {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 110px;
+    height: 110px;
+    border: 2px solid rgba(0, 200, 255, 0.5);
+    border-radius: 50%;
+    background: rgba(0, 0, 0, 0.8);
+    z-index: 25;
+    overflow: hidden;
+    box-shadow: 0 0 20px rgba(0,150,255,0.3);
+}
+
+#minimap canvas {
+    width: 100%;
+    height: 100%;
+}
+
+/* ─ SHOP UI ─ */
+#shop-open-btn {
+    position: fixed;
+    top: 12px;
+    left: 12px;
+    padding: 10px 18px;
+    background: rgba(0, 255, 136, 0.2);
+    border: 1px solid #0f8;
+    color: #0f8;
+    z-index: 40;
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: bold;    pointer-events: auto;
+    font-size: 14px;
+    box-shadow: 0 0 15px rgba(0,255,136,0.2);
+}
+#inventory-open-btn {
+    position: fixed;
+    top: 12px;
+    left: 145px;
+    padding: 10px 18px;
+    background: rgba(100, 180, 255, 0.2);
+    border: 1px solid #6af;
+    color: #6af;
+    z-index: 40;
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: bold;
+    pointer-events: auto;
+    font-size: 14px;
+    box-shadow: 0 0 15px rgba(100,180,255,0.2);
+}
+
+#shop-ui {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 1000;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    overflow-y: auto;
+    padding: 20px;
+}
+
+.shop-container {
+    background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+    border: 2px solid #0f8;
+    padding: 30px;
+    border-radius: 15px;
+    max-width: 520px;
+    width: 100%;
+    color: #fff;
+    box-shadow: 0 0 40px rgba(0,255,136,0.2);
+}
+
+.shop-container h2 {
+    color: #0f8;
+    text-align: center;
+    margin-bottom: 20px;    font-size: 28px;
+    text-shadow: 0 0 20px rgba(0, 255, 136, 0.5);
+}
+
+/* ─ TABS STYLE ─ */
+.shop-tabs {    display: flex;
+    gap: 8px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.shop-tab {
+    padding: 10px 16px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: bold;
+    transition: all 0.3s;
+    color: #aaa;
+}
+
+.shop-tab:hover {
+    background: rgba(0, 255, 136, 0.1);
+    border-color: rgba(0, 255, 136, 0.4);
+    color: #0f8;
+}
+
+.shop-tab.active {
+    background: rgba(0, 255, 136, 0.2);
+    border-color: #0f8;
+    color: #0f8;
+    box-shadow: 0 0 15px rgba(0,255,136,0.2);
+}
+
+.shop-tab-content {
+    display: none;
+}
+
+.shop-tab-content.active {
+    display: block;
+}
+
+.shop-item {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 15px;    margin-bottom: 12px;
+    border-radius: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.3s;
+}
+.shop-item:hover {
+    background: rgba(0, 255, 136, 0.08);
+    border-color: rgba(0, 255, 136, 0.4);
+    box-shadow: 0 0 15px rgba(0,255,136,0.1);
+}
+
+.shop-item-info {
+    flex: 1;
+}
+
+.shop-item-name {
+    font-weight: bold;
+    font-size: 16px;
+    margin-bottom: 4px;
+}
+
+.shop-item-desc {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 4px;
+}
+
+.shop-item-price {
+    color: #ffd700;
+    font-size: 13px;
+}
+
+.shop-item-btn {
+    background: linear-gradient(135deg, #0f8, #0a0);
+    color: #000;
+    border: none;
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    transition: all 0.3s;
+    box-shadow: 0 0 10px rgba(0,255,136,0.3);
+}
+
+.shop-item-btn:hover {
+    background: #0a0;
+    transform: scale(1.05);    box-shadow: 0 0 20px rgba(0,255,136,0.5);
+}
+
+.shop-item-btn:disabled {
+    background: #444;
+    color: #888;
+    cursor: not-allowed;
+    transform: none;    box-shadow: none;
+}
+
+.shop-item-btn.locked {
+    background: #555;
+    color: #aaa;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+    position: relative;
+}
+
+.shop-item-btn.locked::after {
+    content: "🔒";
+    position: absolute;
+    right: 8px;
+}
+
+.shop-close {
+    margin-top: 20px;
+    padding: 12px 30px;
+    background: rgba(255, 0, 0, 0.3);
+    border: 1px solid #f00;
+    color: #f00;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.shop-close:hover {
+    background: rgba(255, 0, 0, 0.5);
+    box-shadow: 0 0 15px rgba(255,0,0,0.3);
+}
+
+/* ─ INVENTORY UI - SEPARATE MODAL WINDOW ─ */
+#inventory-ui {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.95);
+    z-index: 1000;    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.inventory-container {
+    background: linear-gradient(135deg, #0a0a0a, #1a1a1a);
+    border: 2px solid #6af;    padding: 30px;
+    border-radius: 15px;
+    max-width: 90vw;
+    width: 100%;
+    color: #fff;
+    box-shadow: 0 0 40px rgba(100,180,255,0.2);
+}
+
+.inventory-container h2 {
+    color: #6af;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 28px;
+    text-shadow: 0 0 20px rgba(100, 180, 255, 0.5);
+}
+
+.inventory-section {
+    margin-bottom: 25px;
+}
+
+.inventory-section-title {
+    font-size: 16px;
+    color: #6af;
+    margin-bottom: 12px;
+    padding-bottom: 8px;
+    border-bottom: 1px solid rgba(100,180,255,0.3);
+}
+
+/* ─ HORIZONTAL SCROLL ─ */
+.inventory-scroll {
+    display: flex;
+    gap: 12px;
+    overflow-x: auto;
+    padding: 10px 5px;
+    scrollbar-width: thin;
+    scrollbar-color: #6af #222;
+}
+
+.inventory-scroll::-webkit-scrollbar {
+    height: 6px;
+}
+.inventory-scroll::-webkit-scrollbar-track {
+    background: #222;
+    border-radius: 3px;
+}
+
+.inventory-scroll::-webkit-scrollbar-thumb {
+    background: #6af;
+    border-radius: 3px;
+}
+.inventory-item {
+    min-width: 190px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(100, 180, 255, 0.3);
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.inventory-item:hover {
+    background: rgba(100, 180, 255, 0.1);
+    border-color: #6af;
+    box-shadow: 0 0 15px rgba(100,180,255,0.2);
+}
+
+.inventory-item-name {
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: #fff;
+}
+
+.inventory-item-desc {
+    font-size: 10px;
+    color: #aaa;
+    margin-bottom: 6px;
+}
+
+.inventory-item-ammo {
+    font-size: 11px;
+    color: #ffd700;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.inventory-item-btn {
+    background: linear-gradient(135deg, #6af, #48a);
+    color: #000;    border: none;
+    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+    transition: all 0.3s;
+    width: 100%;
+}
+
+.inventory-item-btn:hover {    background: #48a;
+    transform: scale(1.03);
+    box-shadow: 0 0 12px rgba(100,180,255,0.4);
+}
+
+.inventory-item-btn:disabled {
+    background: #444;
+    color: #888;
+    cursor: not-allowed;
+    transform: none;
+}
+
+.inventory-merc-item {
+    min-width: 170px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(0, 255, 100, 0.3);
+    padding: 12px;
+    border-radius: 10px;
+    text-align: center;
+    transition: all 0.3s;
+}
+
+.inventory-merc-item:hover {
+    background: rgba(0, 255, 100, 0.1);
+    border-color: #0f8;
+}
+
+.inventory-merc-name {
+    font-weight: bold;
+    font-size: 14px;
+    margin-bottom: 6px;
+    color: #0f8;
+}
+
+.inventory-merc-desc {
+    font-size: 10px;
+    color: #aaa;
+    margin-bottom: 6px;
+}
+.inventory-merc-health {
+    font-size: 11px;
+    color: #00ff88;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.inventory-merc-btn {
+    background: linear-gradient(135deg, #0f8, #0a0);
+    color: #000;
+    border: none;    padding: 8px 16px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 12px;
+    transition: all 0.3s;
+    width: 100%;
+}
+
+.inventory-merc-btn:hover {
+    background: #0a0;
+    transform: scale(1.03);
+}
+
+.inventory-close {
+    margin-top: 20px;
+    padding: 12px 30px;
+    background: rgba(255, 0, 0, 0.3);
+    border: 1px solid #f00;
+    color: #f00;
+    cursor: pointer;
+    border-radius: 8px;
+    font-size: 16px;
+    transition: all 0.3s;
+}
+
+.inventory-close:hover {
+    background: rgba(255, 0, 0, 0.5);
+    box-shadow: 0 0 15px rgba(255,0,0,0.3);
+}
+
+/* ─ MENU ─ */
+#menu {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, #050510, #0a1525, #050510);
+    display: flex;
+    flex-direction: column;    align-items: center;
+    justify-content: center;
+    z-index: 100;
+}
+
+#menu h1 {
+    font-size: 56px;
+    font-weight: 900;
+    letter-spacing: 8px;
+    color: #fff;
+    text-shadow: 0 0 30px rgba(0, 200, 255, 0.7), 0 0 70px rgba(0, 200, 255, 0.3);
+    margin-bottom: 8px;
+}
+#menu p {
+    font-size: 12px;
+    color: rgba(0, 200, 255, 0.7);
+    letter-spacing: 10px;
+    margin-bottom: 55px;
+}
+
+#start-btn {
+    padding: 18px 55px;
+    background: transparent;
+    border: 2px solid rgba(0, 200, 255, 0.7);
+    color: #0cf;
+    font-size: 16px;
+    font-family: 'Courier New', monospace;
+    letter-spacing: 7px;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.3s;
+    box-shadow: 0 0 20px rgba(0, 200, 255, 0.2);
+}
+
+#start-btn:active {
+    background: rgba(0, 200, 255, 0.12);
+    box-shadow: 0 0 40px rgba(0, 200, 255, 0.6);
+}
+
+.m-hint {
+    margin-top: 28px;
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.25);
+    letter-spacing: 1px;
+    text-align: center;
+    line-height: 2;
+    padding: 0 24px;
+}
+
+/* ─ KEYBOARD HELP UI ─ */
+#keyboard-help {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(10, 15, 30, 0.95);
+    border: 2px solid #0af;
+    border-radius: 15px;
+    padding: 25px;
+    max-width: 500px;
+    width: 90%;
+    z-index: 200;    color: #fff;
+    box-shadow: 0 0 40px rgba(0, 170, 255, 0.4);
+    display: none;
+    pointer-events: auto;
+}
+
+#keyboard-help h3 {
+    color: #0af;
+    text-align: center;
+    margin-bottom: 20px;
+    font-size: 22px;
+    text-shadow: 0 0 15px rgba(0, 170, 255, 0.6);
+}
+
+.key-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 12px;
+    padding: 8px 12px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 8px;
+    align-items: center;
+}
+
+.key-name {
+    font-weight: bold;
+    color: #0ff;
+    font-size: 14px;
+    min-width: 80px;
+}
+
+.key-desc {
+    color: #ccc;
+    font-size: 13px;
+    flex: 1;
+    text-align: right;
+}
+
+.key-hint {
+    text-align: center;
+    margin-top: 15px;
+    font-size: 11px;
+    color: #888;
+    padding-top: 12px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+}
+
+#help-toggle-btn {
+    position: fixed;
+    bottom: 15px;    left: 15px;
+    padding: 10px 18px;
+    background: rgba(0, 170, 255, 0.2);
+    border: 1px solid #0af;
+    color: #0af;
+    z-index: 40;
+    cursor: pointer;
+    border-radius: 8px;
+    font-weight: bold;
+    pointer-events: auto;
+    font-size: 13px;
+    box-shadow: 0 0 15px rgba(0,170,255,0.3);
+    transition: all 0.2s;
+}
+
+#help-toggle-btn:hover {
+    background: rgba(0, 170, 255, 0.4);
+    box-shadow: 0 0 25px rgba(0,170,255,0.5);
+}
+
+/* ─ NOTIFICATIONS ─ */
+#wave-notif {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 40px;
+    font-weight: 900;
+    color: #fff;
+    letter-spacing: 8px;
+    text-shadow: 0 0 30px rgba(0, 200, 255, 0.9);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 50;
+    transition: opacity 0.4s;
+}
+
+#gameover {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.9);
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    backdrop-filter: blur(12px);
+}
+
+#gameover h2 {    font-size: 52px;
+    color: #f33;
+    font-weight: 900;
+    letter-spacing: 5px;
+    text-shadow: 0 0 30px rgba(255, 50, 50, 0.7);
+}
+
+.go-r {
+    font-size: 22px;
+    color: #fff;
+    margin-top: 16px;
+    letter-spacing: 4px;
+}
+
+.go-s {
+    font-size: 13px;
+    color: #666;
+    margin-top: 8px;
+    letter-spacing: 4px;
+}
+#retry-btn {
+    margin-top: 40px;
+    padding: 16px 48px;
+    background: transparent;
+    border: 2px solid rgba(255, 50, 50, 0.6);
+    color: #f33;
+    font-size: 15px;
+    letter-spacing: 6px;
+    cursor: pointer;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    transition: all 0.3s;
+}
+
+#retry-btn:active {
+    background: rgba(255, 50, 50, 0.12);
+    box-shadow: 0 0 30px rgba(255, 50, 50, 0.5);
+}
+
+#power-up-ui {
+    position: fixed;
+    top: 120px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 14px;
+    color: #ff0;
+    letter-spacing: 3px;
+    opacity: 0;
+    transition: opacity 0.3s;
+    text-shadow: 0 0 15px #ff0;    z-index: 10;
+    font-weight: bold;
+}
+
+#killstreak-ui {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 28px;
+    font-weight: bold;
+    color: #ff0;
+    text-shadow: 0 0 25px #ff0;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 45;
+    transition: all 0.3s;
+}
+#achievement-popup {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(0, 0, 0, 0.9);
+    border: 1px solid #ffd700;
+    color: #ffd700;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 15px;
+    opacity: 0;
+    pointer-events: none;
+    z-index: 50;
+    transition: all 0.5s;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(255,215,0,0.3);
+}
+
+#combo-counter {
+    position: absolute;
+    top: 50%;
+    right: 12%;
+    font-size: 40px;
+    font-weight: bold;
+    color: #ff6600;
+    text-shadow: 0 0 20px #ff6600;
+    opacity: 0;
+    transition: all 0.2s;
+}
+
+/* ─ WEATHER EFFECTS ─ */#rain-canvas {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 8;
+}
+
+#fog-overlay {
+    position: fixed;
+    inset: 0;
+    background: radial-gradient(ellipse at center, transparent 20%, rgba(180,200,220,0.15) 100%);
+    pointer-events: none;
+    z-index: 7;
+    opacity: 0;
+    transition: opacity 2s;
+}
+
+#storm-flash {    position: fixed;
+    inset: 0;
+    background: rgba(255,255,255,0.15);
+    pointer-events: none;
+    z-index: 21;
+    opacity: 0;
+    transition: opacity 0.1s;
+}
+</style>
+</head>
+<body>
+
+<button id="shop-open-btn" onclick="openShop()">🛒 المتجر</button>
+<button id="inventory-open-btn" onclick="openInventory()">🎒 المخزون</button>
+<button id="help-toggle-btn" onclick="toggleHelp()">❓ مساعدة الأزرار [H]</button>
+
+<!-- ─ KEYBOARD HELP PANEL ─ -->
+<div id="keyboard-help">
+    <h3>⌨️ أزرار التحكم للكمبيوتر</h3>
+    
+    <div class="key-row">
+        <span class="key-name">W / ↑</span>
+        <span class="key-desc">التحرك للأمام</span>
+    </div>
+    <div class="key-row">
+        <span class="key-name">S / ↓</span>
+        <span class="key-desc">التحرك للخلف</span>
+    </div>
+    <div class="key-row">
+        <span class="key-name">A / ←</span>
+        <span class="key-desc">التحرك لليسار</span>
+    </div>
+    <div class="key-row">        <span class="key-name">D / →</span>
+        <span class="key-desc">التحرك لليمين</span>
+    </div>
+    <div class="key-row">
+        <span class="key-name">🖱️ حركة الفأرة</span>
+        <span class="key-desc">تدوير الكاميرا / التصويب</span>
+    </div>
+    <div class="key-row">
+        <span class="key-name">كليك يسار / F / Space</span>
+        <span class="key-desc">إطلاق النار</span>
+    </div>
+    <div class="key-row">
+        <span class="key-name">R</span>
+        <span class="key-desc">إعادة تعبئة الذخيرة</span>
+    </div>
+    <div class="key-row">
+        <span class="key-name">G</span>
+        <span class="key-desc">رمي قنبلة</span>
+    </div>
+    <div class="key-row">
+        <span class="key-name">M</span>
+        <span class="key-desc">استدعاء مرتزق</span>
+    </div>
+    <div class="key-row">
+        <span class="key-name">1-6</span>
+        <span class="key-desc">تبديل الأسلحة</span>
+    </div>
+    <div class="key-row">
+        <span class="key-name">Tab / I</span>
+        <span class="key-desc">فتح/إغلاق المتجر</span>
+    </div>
+    <div class="key-row">
+        <span class="key-name">E</span>
+        <span class="key-desc">فتح/إغلاق المخزون</span>
+    </div>
+    <div class="key-row">
+        <span class="key-name">H</span>
+        <span class="key-desc">إظهار/إخفاء هذه المساعدة</span>
+    </div>
+    
+    <div class="key-hint">
+        💡 اضغط على الشاشة لبدء التحكم بالفأرة (Pointer Lock)<br>
+        اضغط ESC للخروج من وضع التصويب
+    </div>
+</div>
+
+<div id="shop-ui">
+    <div class="shop-container">
+        <h2>⚔️ المتجر العسكري ⚔️</h2>
+                <!-- TABS -->
+        <div class="shop-tabs">
+            <div class="shop-tab active" onclick="switchShopTab('potions')">💊 جرعات</div>
+            <div class="shop-tab" onclick="switchShopTab('permanent')">🔧 دائم</div>
+            <div class="shop-tab" onclick="switchShopTab('weapons')">🔫 أسلحة</div>
+            <div class="shop-tab" onclick="switchShopTab('ammo')">📦 ذخيرة</div>
+            <div class="shop-tab" onclick="switchShopTab('mercenaries')">👥 المرتزقة E</div>
+        </div>
+        
+        <!-- TAB 1: جرعات -->
+        <div id="tab-potions" class="shop-tab-content active">
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">💚 جرعة صحة كاملة</div>
+                    <div class="shop-item-desc">تستعيد صحتك إلى 100% فوراً</div>
+                    <div class="shop-item-price">💰 600 نقطة</div>
+                </div>
+                <button class="shop-item-btn" onclick="buyHealth()">شراء</button>
+            </div>
+            
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">⚡ جرعة سرعة ×2</div>
+                    <div class="shop-item-desc">تضاعف سرعة حركتك لمدة 20 ثانية</div>
+                    <div class="shop-item-price">💰 500 نقطة | 20 ثانية</div>
+                </div>
+                <button class="shop-item-btn" onclick="buySpeedBoost()">شراء</button>
+            </div>
+        </div>
+        
+        <!-- TAB 2: دائم -->        <div id="tab-permanent" class="shop-tab-content">
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">🔧 تحسين الحركة</div>
+                    <div class="shop-item-desc">زيادة دائمة في سرعة الحركة بنسبة 35%</div>
+                    <div class="shop-item-price">💰 300 نقطة | دائم</div>
+                </div>
+                <button class="shop-item-btn" onclick="buyMovementFix()">تفعيل</button>
+            </div>
+            
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">❤️ زيادة الصحة القصوى</div>
+                    <div class="shop-item-desc">تزيد صحتك القصوى بـ 10 نقاط (الحالي: <span id="maxhp-display">100</span>)</div>
+                    <div class="shop-item-price">💰 850 نقطة | دائم</div>
+                </div>
+                <button class="shop-item-btn" onclick="buyMaxHealth()">شراء</button>
+            </div>
+        </div>
+                <!-- TAB 3: أسلحة -->
+        <div id="tab-weapons" class="shop-tab-content">
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">🔫 مسدس أساسي</div>
+                    <div class="shop-item-desc">سلاح البداية | ضرر: 22 | ذخيرة: 30/120</div>
+                    <div class="shop-item-price">💰 مجاني (مملوك)</div>
+                </div>
+                <button class="shop-item-btn" id="btn-pistol" onclick="equipWeapon('pistol')" disabled>✓ مملوك</button>
+            </div>
+            
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">🔫 شوتجان (Shotgun)</div>
+                    <div class="shop-item-desc">ضرر عالي جداً، مدى قصير | ضرر: 85 | ذخيرة: 8/32</div>
+                    <div class="shop-item-price">💰 3000 نقطة</div>
+                </div>
+                <button class="shop-item-btn" id="btn-shotgun" onclick="buyOrEquipWeapon('shotgun')">شراء</button>
+            </div>
+            
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">🔫 مسدس سريع (SMG)</div>
+                    <div class="shop-item-desc">إطلاق آلي عند الضغط المطول | ضرر: 18 | ذخيرة: 50/250</div>
+                    <div class="shop-item-price">💰 3200 نقطة</div>
+                </div>
+                <button class="shop-item-btn" id="btn-smg" onclick="buyOrEquipWeapon('smg')">شراء</button>
+            </div>
+            
+            <div class="shop-item">                <div class="shop-item-info">
+                    <div class="shop-item-name">🔫 AK-117</div>
+                    <div class="shop-item-desc">معدل إطلاق عالي، دقة جيدة | ضرر: 32 | ذخيرة: 40/200</div>
+                    <div class="shop-item-price">💰 8500 نقطة</div>
+                </div>
+                <button class="shop-item-btn" id="btn-ak117" onclick="buyOrEquipWeapon('ak117')">شراء</button>
+            </div>
+            
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">🔫 AK-47</div>
+                    <div class="shop-item-desc">إطلاق آلي عند الضغط المطول | ضرر: 45 | ذخيرة: 30/150</div>
+                    <div class="shop-item-price">💰 12000 نقطة</div>
+                </div>
+                <button class="shop-item-btn" id="btn-ak47" onclick="buyOrEquipWeapon('ak47')">شراء</button>
+            </div>
+            
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">🔫 رشاش آلي (M4A1)</div>
+                    <div class="shop-item-desc">إطلاق آلي، ضرر متوسط، دقة عالية | ضرر: 38 | ذخيرة: 35/175</div>                    <div class="shop-item-price">💰 15000 نقطة</div>
+                </div>
+                <button class="shop-item-btn" id="btn-m4a1" onclick="buyOrEquipWeapon('m4a1')">شراء</button>
+            </div>
+        </div>
+        
+        <!-- TAB 4: ذخيرة -->
+        <div id="tab-ammo" class="shop-tab-content">
+            <div class="shop-item" style="padding: 10px; margin-bottom: 8px;">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">ذخيرة مسدس أساسي</div>
+                    <div class="shop-item-desc">+30 طلقة احتياطية</div>
+                    <div class="shop-item-price">💰 200 نقطة</div>
+                </div>
+                <button class="shop-item-btn" onclick="buyWeaponAmmo('pistol')">شراء</button>
+            </div>
+            
+            <div class="shop-item" style="padding: 10px; margin-bottom: 8px;">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">ذخيرة شوتجان</div>
+                    <div class="shop-item-desc">+32 طلقة احتياطية</div>
+                    <div class="shop-item-price">💰 400 نقطة</div>
+                </div>
+                <button class="shop-item-btn" onclick="buyWeaponAmmo('shotgun')">شراء</button>
+            </div>
+            
+            <div class="shop-item" style="padding: 10px; margin-bottom: 8px;">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">ذخيرة مسدس سريع</div>                    <div class="shop-item-desc">+50 طلقة احتياطية</div>
+                    <div class="shop-item-price">💰 250 نقطة</div>
+                </div>
+                <button class="shop-item-btn" onclick="buyWeaponAmmo('smg')">شراء</button>
+            </div>
+            
+            <div class="shop-item" style="padding: 10px; margin-bottom: 8px;">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">ذخيرة AK-117</div>
+                    <div class="shop-item-desc">+40 طلقة احتياطية</div>
+                    <div class="shop-item-price">💰 350 نقطة</div>
+                </div>
+                <button class="shop-item-btn" onclick="buyWeaponAmmo('ak117')">شراء</button>
+            </div>
+            
+            <div class="shop-item" style="padding: 10px; margin-bottom: 8px;">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">ذخيرة AK-47</div>
+                    <div class="shop-item-desc">+30 طلقة احتياطية</div>
+                    <div class="shop-item-price">💰 300 نقطة</div>
+                </div>
+                <button class="shop-item-btn" onclick="buyWeaponAmmo('ak47')">شراء</button>            </div>
+            
+            <div class="shop-item" style="padding: 10px;">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">ذخيرة رشاش آلي</div>
+                    <div class="shop-item-desc">+35 طلقة احتياطية</div>
+                    <div class="shop-item-price">💰 320 نقطة</div>
+                </div>
+                <button class="shop-item-btn" onclick="buyWeaponAmmo('m4a1')">شراء</button>
+            </div>
+        </div>
+        
+        <!-- TAB 5: المرتزقة E -->
+        <div id="tab-mercenaries" class="shop-tab-content">
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">👥 مرتزق عادي</div>
+                    <div class="shop-item-desc">يرافقك في القتال، صحة: 80+الموجة×12، ضرر: 22-30</div>
+                    <div class="shop-item-price">💰 1000 نقطة | للقتال الدائم</div>
+                </div>
+                <button class="shop-item-btn" onclick="buyMercenary()">شراء</button>
+            </div>
+            
+            <div class="shop-item">
+                <div class="shop-item-info">
+                    <div class="shop-item-name">👑 مرتزق النخبة (Elite)</div>
+                    <div class="shop-item-desc">لون أخضر غامق، صحة: 300+الموجة×25، ضرر: 60-85، يقهر 5 أعداء لوحده!</div>
+                    <div class="shop-item-price">💰 2500 نقطة | للقتال الدائم</div>                </div>
+                <button class="shop-item-btn" onclick="buyEliteMercenary()">شراء</button>
+            </div>
+        </div>
+        
+        <button class="shop-close" onclick="closeShop()">❌ العودة للقتال</button>
+    </div>
+</div>
+
+<!-- ─ INVENTORY UI - SEPARATE MODAL ─ -->
+<div id="inventory-ui">
+    <div class="inventory-container">
+        <h2>🎒 المخزون الشخصي</h2>
+        
+        <!-- الأسلحة المملوكة -->
+        <div class="inventory-section">
+            <div class="inventory-section-title">🔫 الأسلحة المملوكة</div>
+            <div class="inventory-scroll" id="inventory-weapons">
+                <!-- سيتم ملؤها ديناميكياً -->
+            </div>
+        </div>
+        
+        <!-- المرتزقة غير المستدعين -->        <div class="inventory-section">
+            <div class="inventory-section-title">👥 المرتزقة في الانتظار</div>
+            <div class="inventory-scroll" id="inventory-mercenaries">
+                <!-- سيتم ملؤها ديناميكياً -->
+            </div>
+        </div>
+        
+        <button class="inventory-close" onclick="closeInventory()">❌ إغلاق المخزون</button>
+    </div>
+</div>
+
+<div id="menu">
+    <h1>SHADOW OPS</h1>
+    <p>TACTICAL SHOOTER</p>
+    <button id="start-btn" onclick="startGame()">▶ ابدأ القتال</button>
+    <div class="m-hint">
+        ⌨️ W,A,S,D : حركة | 🖱️ الفأرة : تصويب | كليك يسار : إطلاق نار<br>
+        R : تعبئة | G : قنبلة | M : مرتزق | 1-6 : أسلحة | H : مساعدة
+    </div>
+</div>
+
+<div id="gameover">
+    <h2>☠ انتهت المهمة</h2>
+    <div class="go-r">النقاط: <span id="go-score">0</span></div>
+    <div class="go-s">الموجة: <span id="go-wave">1</span></div>
+    <button id="retry-btn" onclick="retryGame()">↺ إعادة المحاولة</button>
+</div>
+<div id="wave-notif"></div>
+<div id="power-up-ui">🔥 DAMAGE BOOST ACTIVE 🔥</div>
+
+<canvas id="canvas"></canvas>
+<canvas id="rain-canvas"></canvas>
+<div id="fog-overlay"></div>
+<div id="storm-flash"></div>
+<div id="vignette"></div>
+<div id="dmg-flash"></div>
+<div id="fire-flash"></div>
+
+<div id="hud">
+    <div id="crosshair">
+        <div class="ch-h"></div>
+        <div class="ch-v"></div>
+        <div class="ch-dot"></div>
+    </div>
+    <div id="hitmarker">✕</div>
+    <div id="hp-wrap">
+        <div id="hp-title">HEALTH</div>
+        <div id="hp-bar"><div id="hp-fill"></div></div>
+        <div id="hp-num">100</div>
+    </div>    <div id="ammo-wrap">
+        <div id="ammo-main">30</div>
+        <div id="ammo-res">/ 120</div>
+        <div id="reload-bar"><div id="reload-prog"></div></div>
+    </div>
+    <div id="score-wrap">
+        <div id="score-num">0</div>
+        <div id="wave-txt">WAVE 1</div>
+    </div>
+    <div id="killfeed"></div>
+    <div id="killstreak-ui"></div>
+    <div id="combo-counter"></div>
+    <div id="achievement-popup"></div>
+    <div class="corner tl"></div>
+    <div class="corner tr"></div>
+    <div class="corner bl"></div>
+    <div class="corner br"></div>
+</div>
+
+<div id="minimap">
+    <canvas id="minimap-canvas" width="110" height="110"></canvas>
+</div>
+
+<div id="joy-area">
+    <div id="joy-ring"><div id="joy-knob"></div></div>
+</div><div id="look-area"></div>
+
+<button id="fire-btn">🔥</button>
+<button id="reload-btn">↺</button>
+<button id="grenade-btn" onclick="throwGrenade()">💣</button>
+<button id="mercenary-btn" onclick="deployMercenary()">👥 0</button>
+<button id="auto-btn" onclick="toggleAuto()">AUTO OFF</button>
+
+<svg id="weapon" viewBox="0 0 230 150" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="gunGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" style="stop-color:#2a2a2a;stop-opacity:1" />
+            <stop offset="100%" style="stop-color:#111;stop-opacity:1" />
+        </linearGradient>
+    </defs>
+    <rect x="55" y="60" width="135" height="22" rx="3" fill="url(#gunGrad)" stroke="#3a3a3a" stroke-width="1.5"/>
+    <rect x="168" y="64" width="50" height="14" rx="2" fill="#151515" stroke="#2a2a2a" stroke-width="1"/>
+    <rect x="215" y="62" width="7" height="18" rx="1" fill="#0a0a0a" stroke="#222"/>
+    <path d="M70 82 L78 118 L98 118 L92 82 Z" fill="#1a1a1a" stroke="#333" stroke-width="1.5"/>
+    <path d="M92 82 Q108 100 113 82" fill="none" stroke="#333" stroke-width="2"/>
+    <path d="M55 60 L42 55 L34 70 L46 82 L55 82 Z" fill="#1a1a1a" stroke="#333" stroke-width="1.5"/>
+    <rect x="96" y="50" width="58" height="13" rx="2" fill="#151515" stroke="#2a2a2a" stroke-width="1"/>
+    <circle cx="104" cy="56.5" r="4" fill="#1a2535" stroke="#0cf" stroke-width="1.5" opacity="0.8"/>
+    <circle cx="146" cy="56.5" r="4" fill="#1a2535" stroke="#0cf" stroke-width="1.5" opacity="0.8"/>
+    <rect x="100" y="82" width="20" height="30" rx="2" fill="#181818" stroke="#2a2a2a" stroke-width="1"/>    <rect x="80" y="78" width="85" height="5" rx="1" fill="#222"/>
+    <rect x="55" y="60" width="135" height="4" rx="2" fill="rgba(255,255,255,0.06)"/>
+</svg>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ─ THREE.JS SETUP ─
+const canvas = document.getElementById('canvas');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setSize(window.innerWidth, window.innerHeight);
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 2.0;
+renderer.setClearColor(0x0a0a1a);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0a0a1a, 0.02);
+
+const camera = new THREE.PerspectiveCamera(72, window.innerWidth / window.innerHeight, 0.1, 160);
+camera.position.set(0, 1.8, 0);
+
+// متغيرات فيزياء الحركة الاحترافية
+let pVelX = 0, pVelZ = 0;const FRICTION = 0.82; 
+
+let shake = 0;
+let swayX = 0, swayY = 0;
+
+const viewDir = new THREE.Vector3();
+const sideDir = new THREE.Vector3();
+
+// ─ AUTO FIRE STATE ─
+let isFiring = false;
+let autoFireInterval = null;
+
+// ─ AUDIO ─
+let actx = null;
+function initAudio() { if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)(); }
+function beep(type, freq, dur, vol = 0.3) {
+    if (!actx) return;
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = type; o.frequency.value = freq;
+    g.gain.setValueAtTime(vol, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + dur);
+    o.connect(g); g.connect(actx.destination); o.start(); o.stop(actx.currentTime + dur);
+}
+function playShot() {
+    if (!actx) return;
+    const b = actx.createBuffer(1, actx.sampleRate * 0.1, actx.sampleRate), d = b.getChannelData(0);    for (let i = 0; i < d.length; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / d.length, 2.5) * 0.6;
+    const s = actx.createBufferSource(), g = actx.createGain();
+    s.buffer = b; g.gain.setValueAtTime(0.6, actx.currentTime);
+    g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.1);
+    s.connect(g); g.connect(actx.destination); s.start();
+}
+function playHit() { beep('sawtooth', 180, 0.08, 0.25); }
+function playReload() {
+    [0, 0.15, 0.3].forEach((t, i) => setTimeout(() => beep('square', [280, 220, 380][i], 0.06, 0.2), t * 1000));
+}
+
+// ─ LIGHTING ─
+scene.add(new THREE.AmbientLight(0x304060, 2.0));
+const sun = new THREE.DirectionalLight(0xffeedd, 2.5);
+sun.position.set(10, 20, 10);
+sun.castShadow = true;
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.left = -40;
+sun.shadow.camera.right = 40;
+sun.shadow.camera.top = 40;
+sun.shadow.camera.bottom = -40;
+sun.shadow.camera.far = 120;
+sun.shadow.bias = -0.0001;
+scene.add(sun);
+const pl1 = new THREE.PointLight(0xff4400, 4.0, 25);
+pl1.position.set(8, 4, 8);
+scene.add(pl1);
+
+const pl2 = new THREE.PointLight(0x3366ff, 4.0, 25);
+pl2.position.set(-8, 4, -8);
+scene.add(pl2);
+
+const pl3 = new THREE.PointLight(0x00ff88, 2.0, 20);
+pl3.position.set(0, 3, 15);
+scene.add(pl3);
+
+// ─ FLOOR ─
+const floorTex = new THREE.MeshStandardMaterial({ 
+    color: 0x0a0a15, 
+    roughness: 0.85, 
+    metalness: 0.2,
+});
+const floor = new THREE.Mesh(new THREE.PlaneGeometry(90, 90, 60, 60), floorTex);
+floor.rotation.x = -Math.PI / 2;
+floor.receiveShadow = true;
+scene.add(floor);
+
+const grid = new THREE.GridHelper(90, 50, 0x1a1a2e, 0x151525);
+grid.position.y = 0.015;
+scene.add(grid);
+for (let i = -30; i <= 30; i += 15) {
+    const line = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.3, 90),
+        new THREE.MeshBasicMaterial({ color: 0x1a1a30, transparent: true, opacity: 0.3 })
+    );
+    line.rotation.x = -Math.PI / 2;
+    line.position.set(i, 0.02, 0);
+    scene.add(line);
+}
+
+// ─ ARENA WALLS ─
+const AR = 36, WH = 10;
+function box(w, h, d, x, y, z, c = 0x1a1a2a) {
+    const m = new THREE.Mesh(
+        new THREE.BoxGeometry(w, h, d),
+        new THREE.MeshStandardMaterial({ color: c, roughness: 0.7, metalness: 0.3 })
+    );
+    m.position.set(x, y, z);
+    m.castShadow = true;
+    m.receiveShadow = true;
+    scene.add(m);
+    return m;}
+
+box(AR * 2, WH, 1.5, 0, WH / 2, -AR);
+box(AR * 2, WH, 1.5, 0, WH / 2, AR);
+box(1.5, WH, AR * 2, -AR, WH / 2, 0);
+box(1.5, WH, AR * 2, AR, WH / 2, 0);
+
+[
+    [-22, -22], [22, -22], [-22, 22], [22, 22],
+    [-22, 0], [22, 0], [0, -22], [0, 22],
+    [-15, 15], [15, -15], [-15, -15], [15, 15]
+].forEach(([x, z]) => {
+    const pillar = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.6, 0.7, WH, 8),
+        new THREE.MeshStandardMaterial({ color: 0x1a1a2e, roughness: 0.5, metalness: 0.5 })
+    );
+    pillar.position.set(x, WH/2, z);
+    pillar.castShadow = true;
+    pillar.receiveShadow = true;
+    scene.add(pillar);
+    
+    const ring = new THREE.Mesh(
+        new THREE.TorusGeometry(0.7, 0.06, 8, 24),
+        new THREE.MeshStandardMaterial({ color: 0x003366, roughness: 0.3, metalness: 0.7, emissive: 0x001133, emissiveIntensity: 0.3 })
+    );
+    ring.rotation.x = Math.PI / 2;
+    ring.position.set(x, 2.0, z);
+    scene.add(ring);});
+
+// ─ PARTICLES ─
+const parts = [];
+function sparks(pos, count = 8, col1 = 0xffaa00, col2 = 0xff5500) {
+    for (let i = 0; i < count; i++) {
+        const m = new THREE.Mesh(
+            new THREE.SphereGeometry(0.04, 4, 4),
+            new THREE.MeshBasicMaterial({ color: Math.random() > 0.5 ? col1 : col2, transparent: true })
+        );
+        m.position.copy(pos);
+        const v = new THREE.Vector3((Math.random() - 0.5) * 0.5, Math.random() * 0.5, (Math.random() - 0.5) * 0.5);
+        scene.add(m);
+        parts.push({ mesh: m, vel: v, life: 1 });
+    }
+}
+
+function updateParts() {
+    for (let i = parts.length - 1; i >= 0; i--) {
+        const p = parts[i];
+        p.vel.y -= 0.02;
+        p.mesh.position.add(p.vel);        p.life -= 0.05;
+        p.mesh.material.opacity = Math.max(0, p.life);
+        if (p.life <= 0) {
+            scene.remove(p.mesh);
+            parts.splice(i, 1);
+        }
+    }
+}
+
+// ─ WEAPONS SYSTEM WITH PER-WEAPON AMMO TRACKING ─
+const weapons = {
+    'pistol': { 
+        name: 'مسدس أساسي', damage: 22, fireRate: 7, clipSize: 30, reserve: 120, price: 0, owned: true, autoFire: false, ammoPrice: 200, color: 0xffaa00,
+        currentClip: 30, reserveAmmo: 120
+    },
+    'shotgun': { 
+        name: 'شوتجان', damage: 85, fireRate: 35, clipSize: 8, reserve: 32, price: 3000, owned: false, autoFire: false, ammoPrice: 400, color: 0xff4444,
+        currentClip: 8, reserveAmmo: 32
+    },
+    'ak47': { 
+        name: 'AK-47', damage: 45, fireRate: 12, clipSize: 30, reserve: 150, price: 12000, owned: false, autoFire: true, ammoPrice: 300, color: 0x4488ff, waveLock: 10,
+        currentClip: 30, reserveAmmo: 150
+    },
+    'ak117': { 
+        name: 'AK-117', damage: 32, fireRate: 5, clipSize: 40, reserve: 200, price: 8500, owned: false, autoFire: false, ammoPrice: 350, color: 0x8844ff,
+        currentClip: 40, reserveAmmo: 200
+    },
+    'smg': { 
+        name: 'مسدس سريع', damage: 18, fireRate: 3, clipSize: 50, reserve: 250, price: 3200, owned: false, autoFire: true, ammoPrice: 250, color: 0x44ff88,        currentClip: 50, reserveAmmo: 250
+    },
+    'm4a1': { 
+        name: 'رشاش آلي', damage: 38, fireRate: 8, clipSize: 35, reserve: 175, price: 15000, owned: false, autoFire: true, ammoPrice: 320, color: 0x8888ff, waveLock: 10,
+        currentClip: 35, reserveAmmo: 175
+    }
+};
+let currentWeapon = 'pistol';
+
+function saveCurrentWeaponAmmo() {
+    if (weapons[currentWeapon]) {
+        weapons[currentWeapon].currentClip = gs.ammo;
+        weapons[currentWeapon].reserveAmmo = gs.reserve;
+    }
+}
+
+function loadWeaponAmmo(weaponKey) {
+    if (weapons[weaponKey]) {
+        gs.ammo = weapons[weaponKey].currentClip;
+        gs.maxAmmo = weapons[weaponKey].clipSize;
+        gs.reserve = weapons[weaponKey].reserveAmmo;    }
+}
+
+function equipWeapon(weaponKey) {
+    if (!weapons[weaponKey].owned) return;
+    
+    // حفظ سلاح الحالي قبل التبديل
+    saveCurrentWeaponAmmo();
+    
+    currentWeapon = weaponKey;
+    loadWeaponAmmo(weaponKey);
+    gs.cd = 0;
+    updateAmmoUI();
+    updateInventoryUI();
+    showKillstreak(`🔫 تم تجهيز: ${weapons[weaponKey].name}`);
+    beep('sine', 700, 0.2, 0.3);
+}
+
+function buyOrEquipWeapon(weaponKey) {
+    const weapon = weapons[weaponKey];
+    if (weapon.owned) {
+        equipWeapon(weaponKey);
+    } else {
+        buyWeapon(weaponKey);
+    }
+}
+
+function buyWeapon(weaponKey) {
+    const weapon = weapons[weaponKey];
+        // 🔒 التحقق من شرط الموجة 10 للأسلحة القوية
+    if (weapon.waveLock && gs.wave < weapon.waveLock) {
+        beep('sawtooth', 120, 0.3);
+        showKillstreak(`🔒 يجب اجتياز الموجة ${weapon.waveLock} أولاً!`);
+        return;
+    }
+    
+    if (gs.score >= weapon.price && !weapon.owned) {
+        gs.score -= weapon.price;
+        weapon.owned = true;
+        updateScoreUI();
+        equipWeapon(weaponKey);
+        document.getElementById(`btn-${weaponKey}`).textContent = '✓ مملوك';
+        document.getElementById(`btn-${weaponKey}`).disabled = true;
+        beep('sine', 900, 0.3, 0.4);
+        showKillstreak(`🔫 تم شراء ${weapon.name}!`);
+        updateInventoryUI();
+    } else if (weapon.owned) {
+        equipWeapon(weaponKey);
+    } else {        beep('sawtooth', 150, 0.2);
+    }
+}
+
+function buyWeaponAmmo(weaponKey) {
+    const weapon = weapons[weaponKey];
+    if (gs.score >= weapon.ammoPrice) {
+        gs.score -= weapon.ammoPrice;
+        weapon.reserveAmmo += weapon.clipSize;
+        if (weaponKey === currentWeapon) {
+            gs.reserve = weapon.reserveAmmo;
+            updateAmmoUI();
+        }
+        updateScoreUI();
+        updateInventoryUI();
+        beep('sine', 600, 0.2, 0.3);
+        showKillstreak(`📦 تمت إضافة ذخيرة لـ ${weapon.name}!`);
+    } else {
+        beep('sawtooth', 150, 0.2);
+    }
+}
+
+// ─ INVENTORY SYSTEM - SEPARATE MODAL ─
+function openInventory() {
+    if (!gs.running) return;
+    gs.running = false;
+    document.getElementById('inventory-ui').style.display = 'flex';
+    updateInventoryUI();
+}
+
+function closeInventory() {    gs.running = true;
+    document.getElementById('inventory-ui').style.display = 'none';
+}
+
+function updateInventoryUI() {
+    // تحديث قسم الأسلحة - إظهار الذخيرة الباقية الفعلية
+    const weaponsContainer = document.getElementById('inventory-weapons');
+    weaponsContainer.innerHTML = '';
+    
+    Object.keys(weapons).forEach(key => {
+        const w = weapons[key];
+        if (!w.owned) return;
+        
+        // حساب إجمالي الذخيرة المتبقية: المخزن + الاحتياطي
+        const totalAmmo = w.currentClip + w.reserveAmmo;
+        
+        const item = document.createElement('div');
+        item.className = 'inventory-item';
+        item.innerHTML = `            <div class="inventory-item-name">${w.name}</div>
+            <div class="inventory-item-desc">ضرر: ${w.damage} | إطلاق: ${w.autoFire ? 'آلي' : 'فردي'}</div>
+            <div class="inventory-item-ammo">📦 ${totalAmmo} طلقة متبقية</div>
+            <button class="inventory-item-btn" onclick="equipWeapon('${key}')" ${currentWeapon === key ? 'disabled' : ''}>
+                ${currentWeapon === key ? '✓ مُفعّل' : 'تفعيل'}
+            </button>
+        `;
+        weaponsContainer.appendChild(item);
+    });
+    
+    // تحديث قسم المرتزقة - إظهار الصحة المتبقية المتوقعة
+    const mercsContainer = document.getElementById('inventory-mercenaries');
+    mercsContainer.innerHTML = '';
+    
+    if (gs.mercenariesInventory > 0) {
+        for (let i = 0; i < gs.mercenariesInventory; i++) {
+            const projectedHp = 80 + gs.wave * 12;
+            const item = document.createElement('div');
+            item.className = 'inventory-merc-item';
+            item.innerHTML = `
+                <div class="inventory-merc-name">👥 مرتزق عادي</div>
+                <div class="inventory-merc-desc">ضرر: 22-30</div>
+                <div class="inventory-merc-health">❤️ صحة متوقعة: ${projectedHp}</div>
+                <button class="inventory-merc-btn" onclick="deployFromInventory('normal')">استدعاء</button>
+            `;
+            mercsContainer.appendChild(item);
+        }
+    }
+    
+    if (gs.eliteMercenariesInventory > 0) {
+        for (let i = 0; i < gs.eliteMercenariesInventory; i++) {
+            const projectedHp = 300 + gs.wave * 25;            const item = document.createElement('div');
+            item.className = 'inventory-merc-item';
+            item.innerHTML = `
+                <div class="inventory-merc-name">👑 مرتزق نخبة</div>
+                <div class="inventory-merc-desc">ضرر: 60-85</div>
+                <div class="inventory-merc-health">❤️ صحة متوقعة: ${projectedHp}</div>
+                <button class="inventory-merc-btn" onclick="deployFromInventory('elite')">استدعاء</button>
+            `;
+            mercsContainer.appendChild(item);
+        }
+    }
+    
+    if (gs.mercenariesInventory === 0 && gs.eliteMercenariesInventory === 0) {
+        mercsContainer.innerHTML = '<div style="color:#666;font-size:12px;padding:10px;text-align:center">لا يوجد مرتزقة في الانتظار</div>';
+    }
+}
+
+function deployFromInventory(type) {    if (!gs.running) return;
+    
+    if (type === 'normal' && gs.mercenariesInventory > 0) {
+        gs.mercenariesInventory--;
+        createMercenary(false);
+        beep('sine', 500, 0.2, 0.25);
+        showKillstreak('👥 مرتزق جديد في الخدمة!');
+    } else if (type === 'elite' && gs.eliteMercenariesInventory > 0) {
+        gs.eliteMercenariesInventory--;
+        createMercenary(true);
+        beep('sine', 600, 0.25, 0.3);
+        showKillstreak('👑 مرتزق النخبة في الخدمة!');
+    }
+    
+    updateMercenaryUI();
+    updateInventoryUI();
+}
+
+// ─ GAME STATE ─
+const gs = {
+    running: false, hp: 100, maxHp: 100, ammo: 30, maxAmmo: 30, reserve: 120,
+    score: 0, wave: 1, kills: 0, reloading: false, reloadTmr: 0, cd: 0,
+    camYaw: 0, camPitch: 0, damageBoost: false, speedBoost: false,
+    speedBoostTimer: 0, armorActive: false, armorTimer: 0,
+    movementEnhanced: false, mercenaries: [], mercenaryCount: 0,
+    mercenariesInventory: 0, eliteMercenariesInventory: 0
+};
+
+// ─ ENEMIES & BULLETS ─
+const enemies = [];
+const enemyBullets = [];
+const allyBullets = [];
+const KNAMES = ['الصقر', 'العقرب', 'الظل', 'الرعد', 'المارد', 'الشبح', 'الفهد', 'التنين'];
+function mkEnemy(x, z, wave) {
+    const g = new THREE.Group();
+    
+    const bodyGeo = new THREE.CylinderGeometry(0.35, 0.4, 1.2, 8);
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x881111, roughness: 0.4, metalness: 0.5 });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.position.y = 1.2;
+    body.castShadow = true;
+    g.add(body);
+    
+    const headGeo = new THREE.SphereGeometry(0.3, 8, 8);
+    const headMat = new THREE.MeshStandardMaterial({ color: 0xaa2222, roughness: 0.3, metalness: 0.4 });
+    const head = new THREE.Mesh(headGeo, headMat);
+    head.position.y = 2.0;
+    head.castShadow = true;
+    g.add(head);    
+    [-0.35, 0.35].forEach(sx => {
+        const shoulder = new THREE.Mesh(
+            new THREE.BoxGeometry(0.25, 0.2, 0.25),
+            new THREE.MeshStandardMaterial({ color: 0x771111, roughness: 0.5, metalness: 0.4 })
+        );
+        shoulder.position.set(sx, 1.6, 0);
+        g.add(shoulder);
+    });
+    
+    const gunGroup = new THREE.Group();
+    const gunBarrel = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.06, 0.08, 0.8, 8),
+        new THREE.MeshStandardMaterial({ color: 0x222222, roughness: 0.3, metalness: 0.8 })
+    );
+    gunBarrel.rotation.x = Math.PI / 2;
+    gunBarrel.position.z = 0.4;
+    gunGroup.add(gunBarrel);
+    
+    const gunBody = new THREE.Mesh(
+        new THREE.BoxGeometry(0.12, 0.15, 0.3),
+        new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.3, metalness: 0.7 })
+    );
+    gunBody.position.set(0, 0, 0.15);
+    gunGroup.add(gunBody);
+    
+    gunGroup.position.set(0.4, 1.3, 0.2);
+    g.add(gunGroup);
+    
+    [-0.08, 0.08].forEach(ex => {
+        const eye = new THREE.Mesh(
+            new THREE.SphereGeometry(0.06, 6, 6),
+            new THREE.MeshBasicMaterial({ color: 0xff2200 })
+        );        eye.position.set(ex, 2.05, 0.25);
+        g.add(eye);
+    });
+    
+    const bgBar = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.8, 0.08),
+        new THREE.MeshBasicMaterial({ color: 0x333333 })
+    );
+    bgBar.position.set(0, 2.6, 0);
+    g.add(bgBar);
+    
+    const fgB = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.8, 0.08),
+        new THREE.MeshBasicMaterial({ color: 0x00ff44 })
+    );
+    fgB.position.set(0, 2.6, 0.01);    g.add(fgB);
+    
+    const armor = new THREE.Mesh(
+        new THREE.BoxGeometry(0.5, 0.6, 0.1),
+        new THREE.MeshStandardMaterial({ color: 0x440000, roughness: 0.6, metalness: 0.6 })
+    );
+    armor.position.set(0, 1.2, 0.35);
+    g.add(armor);
+    
+    g.position.set(x, 0, z);
+    
+    const hp = 50 + wave * 15;
+    const en = {
+        g, fgB, hp, maxHp: hp,
+        speed: 0.015 + wave * 0.004,
+        alive: true,
+        sTmr: 50 + Math.random() * 70,
+        bob: Math.random() * Math.PI * 2,
+        hit: 0
+    };
+    scene.add(g);
+    enemies.push(en);
+}
+
+// ─ MERCENARY SYSTEM ─
+function createMercenary(isElite = false) {
+    const g = new THREE.Group();
+    
+    const bodyColor = isElite ? 0x004400 : 0x008833;
+    const headColor = isElite ? 0x005522 : 0x00aa44;
+    const helmetColor = isElite ? 0x002211 : 0x005522;
+    const eyeColor = isElite ? 0x00ff88 : 0x00ff00;
+    const hpBarColor = isElite ? 0x00ff88 : 0x00ff00;
+    const armorColor = isElite ? 0x002200 : 0x004400;
+        const bodyGeo = new THREE.CylinderGeometry(0.32, 0.38, 1.1, 8);
+    const bodyMat = new THREE.MeshStandardMaterial({ color: bodyColor, roughness: 0.4, metalness: 0.5 });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    body.position.y = 1.1;
+    body.castShadow = true;
+    g.add(body);
+    
+    const headGeo = new THREE.SphereGeometry(0.28, 8, 8);
+    const headMat = new THREE.MeshStandardMaterial({ color: headColor, roughness: 0.3, metalness: 0.4 });
+    const head = new THREE.Mesh(headGeo, headMat);
+    head.position.y = 1.9;
+    head.castShadow = true;
+    g.add(head);
+    
+    const helmet = new THREE.Mesh(        new THREE.SphereGeometry(0.3, 8, 6, 0, Math.PI*2, 0, Math.PI/2),
+        new THREE.MeshStandardMaterial({ color: helmetColor, roughness: 0.3, metalness: 0.7 })
+    );
+    helmet.position.y = 1.9;
+    g.add(helmet);
+    
+    const gunGroup = new THREE.Group();
+    const gunBarrel = new THREE.Mesh(
+        new THREE.CylinderGeometry(0.05, 0.07, 0.7, 8),
+        new THREE.MeshStandardMaterial({ color: 0x2a2a2a, roughness: 0.3, metalness: 0.8 })
+    );
+    gunBarrel.rotation.x = Math.PI / 2;
+    gunBarrel.position.z = 0.35;
+    gunGroup.add(gunBarrel);
+    gunGroup.position.set(0.35, 1.2, 0.2);
+    g.add(gunGroup);
+    
+    [-0.07, 0.07].forEach(ex => {
+        const eye = new THREE.Mesh(
+            new THREE.SphereGeometry(0.05, 6, 6),
+            new THREE.MeshBasicMaterial({ color: eyeColor })
+        );
+        eye.position.set(ex, 1.95, 0.24);
+        g.add(eye);
+    });
+    
+    const bgBar = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.7, 0.07),
+        new THREE.MeshBasicMaterial({ color: 0x222222 })
+    );
+    bgBar.position.set(0, 2.5, 0);
+    g.add(bgBar);
+    
+    const hpBar = new THREE.Mesh(
+        new THREE.PlaneGeometry(0.7, 0.07),
+        new THREE.MeshBasicMaterial({ color: hpBarColor })    );
+    hpBar.position.set(0, 2.5, 0.01);
+    g.add(hpBar);
+    
+    const armor = new THREE.Mesh(
+        new THREE.BoxGeometry(0.45, 0.55, 0.1),
+        new THREE.MeshStandardMaterial({ color: armorColor, roughness: 0.5, metalness: 0.6 })
+    );
+    armor.position.set(0, 1.1, 0.32);
+    g.add(armor);
+    
+    const spawnPos = camera.position.clone();
+    spawnPos.x += (Math.random() - 0.5) * 5;
+    spawnPos.z += (Math.random() - 0.5) * 5;    spawnPos.y = 0;
+    g.position.copy(spawnPos);
+    
+    scene.add(g);
+    
+    const startHp = isElite ? (300 + gs.wave * 25) : (80 + gs.wave * 12);
+    const mercDamage = isElite ? { min: 60, max: 85 } : { min: 22, max: 30 };
+    const merc = {
+        g, hpBar, hp: startHp, maxHp: startHp,
+        alive: true, shootTimer: isElite ? 35 : 25,
+        isElite: isElite, damage: mercDamage
+    };
+    
+    gs.mercenaries.push(merc);
+    gs.mercenaryCount++;
+    return merc;
+}
+
+function shootAllyBullet(startPos, targetPos, merc) {
+    const bulletColor = merc.isElite ? 0x00ff88 : 0x00ff00;
+    const bulletMesh = new THREE.Mesh(
+        new THREE.SphereGeometry(merc.isElite ? 0.18 : 0.12, 6, 6), 
+        new THREE.MeshBasicMaterial({ color: bulletColor })
+    );
+    bulletMesh.position.copy(startPos);
+    bulletMesh.position.y += 1.2;
+    
+    const target = targetPos.clone();
+    target.y += 1.0;
+    target.x += (Math.random() - 0.5) * (merc.isElite ? 0.2 : 0.4);
+    target.z += (Math.random() - 0.5) * (merc.isElite ? 0.2 : 0.4);
+
+    const dir = new THREE.Vector3().copy(target).sub(bulletMesh.position).normalize();
+    scene.add(bulletMesh);
+    const speed = merc.isElite ? 0.55 : 0.45;
+    allyBullets.push({ mesh: bulletMesh, dir: dir, speed: speed, life: 130, isElite: merc.isElite, damage: merc.damage });
+    beep('square', merc.isElite ? 300 : 250, 0.06, 0.06);}
+
+function updateAllyBullets() {
+    for (let i = allyBullets.length - 1; i >= 0; i--) {
+        const b = allyBullets[i];
+        b.mesh.position.addScaledVector(b.dir, b.speed);
+        b.life--;
+
+        let hit = false;
+        for (let j = 0; j < enemies.length; j++) {
+            const en = enemies[j];
+            if (!en.alive) continue;
+            if (b.mesh.position.distanceTo(en.g.position) < 1.2) {                const dmg = b.isElite ? 
+                    (b.damage.min + Math.random() * (b.damage.max - b.damage.min)) :
+                    (22 + Math.random() * 8);
+                en.hp -= dmg;
+                en.hit = 6;
+                sparks(b.mesh.position, b.isElite ? 10 : 6, b.isElite ? 0x00ff88 : 0x00ff00, 0xffffff);
+                if (en.hp <= 0) killEnemy(en);
+                else updateEnemyBar(en);
+
+                scene.remove(b.mesh);
+                allyBullets.splice(i, 1);
+                hit = true;
+                break;
+            }
+        }
+
+        if (!hit && b.life <= 0) {
+            scene.remove(b.mesh);
+            allyBullets.splice(i, 1);
+        }
+    }
+}
+
+function updateMercenaries() {
+    for (let i = gs.mercenaries.length - 1; i >= 0; i--) {
+        const merc = gs.mercenaries[i];
+        if (!merc.alive) {
+            scene.remove(merc.g);
+            gs.mercenaries.splice(i, 1);
+            continue;
+        }
+        
+        let closestEnemy = null;
+        let minDist = Infinity;
+        
+        enemies.forEach(en => {
+            if (!en.alive) return;
+            const dist = merc.g.position.distanceTo(en.g.position);            if (dist < 45 && dist < minDist) {
+                minDist = dist;
+                closestEnemy = en;
+            }
+        });
+        
+        if (closestEnemy) {
+            merc.g.rotation.y = Math.atan2(
+                closestEnemy.g.position.x - merc.g.position.x,
+                closestEnemy.g.position.z - merc.g.position.z
+            );
+                        if (minDist > (merc.isElite ? 12 : 8)) {
+                const dir = closestEnemy.g.position.clone().sub(merc.g.position).normalize();
+                merc.g.position.x += dir.x * (merc.isElite ? 0.025 : 0.02);
+                merc.g.position.z += dir.z * (merc.isElite ? 0.025 : 0.02);
+            }
+
+            merc.shootTimer--;
+            if (merc.shootTimer <= 0) {
+                merc.shootTimer = (merc.isElite ? 35 : 25) + Math.random() * 25;
+                shootAllyBullet(merc.g.position, closestEnemy.g.position, merc);
+            }
+        }
+        
+        for (let bi = enemyBullets.length - 1; bi >= 0; bi--) {
+            const b = enemyBullets[bi];
+            if (b.mesh.position.distanceTo(merc.g.position) < 0.8) {
+                merc.hp -= 8 + Math.random() * 6;
+                scene.remove(b.mesh);
+                enemyBullets.splice(bi, 1);
+                
+                const hpPercent = Math.max(0, merc.hp / merc.maxHp);
+                merc.hpBar.scale.x = hpPercent;
+                merc.hpBar.position.x = -(1 - hpPercent) * 0.35;
+                
+                if (merc.hp <= 0) {
+                    merc.alive = false;
+                    sparks(merc.g.position, merc.isElite ? 25 : 15, merc.isElite ? 0x00ff88 : 0x00ff00, 0xffffff);
+                }
+            }
+        }
+        
+        const hpPercent = Math.max(0, merc.hp / merc.maxHp);
+        merc.hpBar.scale.x = hpPercent;
+        merc.hpBar.position.x = -(1 - hpPercent) * 0.35;
+    }
+}
+
+function updateMercenaryUI() {
+    const btn = document.getElementById('mercenary-btn');    const total = gs.mercenariesInventory + gs.eliteMercenariesInventory;
+    btn.textContent = `👥 ${total}`;
+    btn.style.opacity = total > 0 ? '1' : '0.5';
+}
+
+function deployMercenary() {
+    if (!gs.running) return;
+    if (gs.mercenariesInventory > 0) {
+        gs.mercenariesInventory--;
+        createMercenary(false);
+        beep('sine', 500, 0.2, 0.25);        showKillstreak('👥 مرتزق جديد في الخدمة!');
+    } else if (gs.eliteMercenariesInventory > 0) {
+        gs.eliteMercenariesInventory--;
+        createMercenary(true);
+        beep('sine', 600, 0.25, 0.3);
+        showKillstreak('👑 مرتزق النخبة في الخدمة!');
+    }
+    updateMercenaryUI();
+    updateInventoryUI();
+}
+
+// ─ SHOP TABS ─
+function switchShopTab(tabName) {
+    document.querySelectorAll('.shop-tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.shop-tab-content').forEach(c => c.classList.remove('active'));
+    
+    event.currentTarget.classList.add('active');
+    document.getElementById(`tab-${tabName}`).classList.add('active');
+    
+    if (tabName === 'permanent') {
+        document.getElementById('maxhp-display').textContent = gs.maxHp;
+    }
+    
+    if (tabName === 'weapons') {
+        Object.keys(weapons).forEach(key => {
+            const btn = document.getElementById(`btn-${key}`);
+            const w = weapons[key];
+            
+            if (w.owned) {
+                btn.textContent = '✓ مملوك';
+                btn.disabled = true;
+                btn.classList.remove('locked');
+            } else if (w.waveLock && gs.wave < w.waveLock) {
+                btn.textContent = `🔒 الموجة ${w.waveLock}`;
+                btn.disabled = true;
+                btn.classList.add('locked');
+            } else {
+                btn.textContent = 'شراء';
+                btn.disabled = false;
+                btn.classList.remove('locked');            }
+        });
+    }
+}
+
+// ─ SHOP FUNCTIONS ─
+function openShop() { if (!gs.running) return; gs.running = false; document.getElementById('shop-ui').style.display = 'flex'; switchShopTab('potions'); }
+function closeShop() { gs.running = true; document.getElementById('shop-ui').style.display = 'none'; }
+
+function buyHealth() {    if (gs.score >= 600) { gs.score -= 600; gs.hp = gs.maxHp; updateHpUI(); updateScoreUI(); beep('sine', 800, 0.2); showKillstreak('💚 صحة كاملة!'); } else beep('sawtooth', 150, 0.2);
+}
+function buySpeedBoost() {
+    if (gs.score >= 500) { gs.score -= 500; gs.speedBoost = true; gs.speedBoostTimer = 1200; updateScoreUI(); beep('sine', 1000, 0.3); showKillstreak('⚡ سرعة مضاعفة!'); setTimeout(() => { gs.speedBoost = false; }, 20000); } else beep('sawtooth', 150, 0.2);
+}
+function buyArmor() {
+    if (gs.score >= 800) { gs.score -= 800; gs.armorActive = true; gs.armorTimer = 1500; updateScoreUI(); beep('sine', 700, 0.3); showKillstreak('🛡️ درع مفعل!'); setTimeout(() => { gs.armorActive = false; }, 25000); } else beep('sawtooth', 150, 0.2);
+}
+function buyGrenades() {
+    if (gs.score >= 300) { gs.score -= 300; grenadeCount = 3; updateGrenadeUI(); updateScoreUI(); beep('sine', 500, 0.2); } else beep('sawtooth', 150, 0.2);
+}
+function buyMercenary() {
+    if (gs.score >= 1000) { gs.score -= 1000; gs.mercenariesInventory++; updateMercenaryUI(); updateScoreUI(); updateInventoryUI(); beep('sine', 600, 0.3); showKillstreak('👥 تم شراء مرتزق!'); } else beep('sawtooth', 150, 0.2);
+}
+function buyEliteMercenary() {
+    if (gs.score >= 2500) { gs.score -= 2500; gs.eliteMercenariesInventory++; updateMercenaryUI(); updateScoreUI(); updateInventoryUI(); beep('sine', 700, 0.35); showKillstreak('👑 تم شراء مرتزق النخبة!'); } else beep('sawtooth', 150, 0.2);
+}
+function buyMovementFix() {
+    if (gs.score >= 300) { gs.score -= 300; gs.movementEnhanced = true; updateScoreUI(); beep('sine', 900, 0.3); showKillstreak('🔧 حركة محسنة!'); } else beep('sawtooth', 150, 0.2);
+}
+function buyMaxHealth() {
+    if (gs.score >= 850) {
+        gs.score -= 850;
+        gs.maxHp += 10;
+        if (gs.hp === gs.maxHp - 10) gs.hp = gs.maxHp;
+        updateHpUI();
+        updateScoreUI();
+        document.getElementById('maxhp-display').textContent = gs.maxHp;
+        beep('sine', 1000, 0.4, 0.4);
+        showKillstreak(`❤️ الصحة القصوى: ${gs.maxHp}!`);
+    } else beep('sawtooth', 150, 0.2);
+}
+function updateScoreUI() { document.getElementById('score-num').textContent = gs.score.toLocaleString(); }
+
+function showHit() { const h = document.getElementById('hitmarker'); h.style.opacity = '1'; setTimeout(() => h.style.opacity = '0', 150); }
+function startReload() { if (gs.reloading || gs.reserve <= 0 || gs.ammo === gs.maxAmmo) return; gs.reloading = true; gs.reloadTmr = 100; const rb = document.getElementById('reload-bar'), rp = document.getElementById('reload-prog'); rb.style.display = 'block'; rp.style.width = '0%'; requestAnimationFrame(() => { rp.style.transition = 'width 1.4s linear'; rp.style.width = '100%'; }); playReload(); }
+function finishReload() { 
+    const weapon = weapons[currentWeapon];
+    const n = weapon.clipSize - gs.ammo;
+    const t = Math.min(n, weapon.reserveAmmo);
+    gs.ammo += t;    weapon.reserveAmmo -= t;
+    weapon.currentClip = gs.ammo;
+    gs.reserve = weapon.reserveAmmo;
+    gs.reloading = false;
+    document.getElementById('reload-bar').style.display = 'none';
+    updateAmmoUI();
+}
+function updateAmmoUI() { document.getElementById('ammo-main').textContent = gs.ammo; document.getElementById('ammo-res').textContent = `/ ${gs.reserve}`; }
+function updateHpUI() { const p = gs.hp / gs.maxHp * 100; const f = document.getElementById('hp-fill'), n = document.getElementById('hp-num'); f.style.width = p + '%'; if (p > 50) { f.style.background = 'linear-gradient(90deg,#00ff88,#00ffc8)'; f.style.boxShadow = '0 0 12px #00ff88'; n.style.color = '#00ff88'; } else if (p > 25) { f.style.background = 'linear-gradient(90deg,#ffaa00,#ffcc00)'; f.style.boxShadow = '0 0 10px #ffaa00'; n.style.color = '#ffaa00'; } else { f.style.background = 'linear-gradient(90deg,#ff2200,#ff6600)'; f.style.boxShadow = '0 0 10px #ff2200'; n.style.color = '#ff4'; } n.textContent = Math.ceil(gs.hp); }function takeDamage(d) { if (gs.armorActive) d *= 0.5; gs.hp = Math.max(0, gs.hp - d); updateHpUI(); shake = 0.18; const fl = document.getElementById('dmg-flash'); fl.style.opacity = '1'; setTimeout(() => fl.style.opacity = '0', 150); if (gs.hp <= 0) gameOver(); }
+function gameOver() { gs.running = false; document.getElementById('go-score').textContent = gs.score.toLocaleString(); document.getElementById('go-wave').textContent = gs.wave; document.getElementById('gameover').style.display = 'flex'; }
+function nextWave() { gs.wave++; spawnWave(gs.wave); gs.hp = Math.min(gs.maxHp, gs.hp + 35); updateHpUI(); }
+function updateEnemyBar(en) { const r = Math.max(0, en.hp / en.maxHp); en.fgB.scale.x = r; en.fgB.position.x = -(1 - r) * 0.4; en.fgB.material.color.setHex(r > 0.5 ? 0x00ff44 : r > 0.25 ? 0xffaa00 : 0xff2200); }
+function activatePowerUp() { gs.damageBoost = true; document.getElementById('power-up-ui').style.opacity = '1'; pl1.color.setHex(0xffff00); setTimeout(() => { gs.damageBoost = false; document.getElementById('power-up-ui').style.opacity = '0'; pl1.color.setHex(0xff4400); }, 8000); }
+let comboCount = 0, comboTimer = null;
+function incrementCombo() { comboCount++; clearTimeout(comboTimer); const comboEl = document.getElementById('combo-counter'); comboEl.style.opacity = '1'; comboEl.textContent = `${comboCount}x`; if (comboCount >= 5) { showKillstreak(`🔥 ${comboCount} قتلات متتالية!`); activatePowerUp(); } comboTimer = setTimeout(() => { comboCount = 0; comboEl.style.opacity = '0'; }, 3000); }
+function showKillstreak(text) { const el = document.getElementById('killstreak-ui'); el.textContent = text; el.style.opacity = '1'; el.style.transform = 'translate(-50%, -50%) scale(1.2)'; setTimeout(() => { el.style.opacity = '0'; el.style.transform = 'translate(-50%, -50%) scale(1)'; }, 2000); }
+const achievements = { firstKill: { unlocked: false, title: 'أول دم', description: 'اقتل أول عدو' }, kill10: { unlocked: false, title: 'جندي متمرس', description: 'اقتل 10 أعداء' }, kill50: { unlocked: false, title: 'آلة قتل', description: 'اقتل 50 عدو' }, wave10: { unlocked: false, title: 'محارب الموجات', description: 'وصل للموجة 10' }, combo5: { unlocked: false, title: 'سفاح', description: 'احصل على 5 قتلات متتالية' } };
+function checkAchievements() { if (!achievements.firstKill.unlocked && gs.kills >= 1) unlockAchievement('firstKill'); if (!achievements.kill10.unlocked && gs.kills >= 10) unlockAchievement('kill10'); if (!achievements.kill50.unlocked && gs.kills >= 50) unlockAchievement('kill50'); if (!achievements.wave10.unlocked && gs.wave >= 10) unlockAchievement('wave10'); if (!achievements.combo5.unlocked && comboCount >= 5) unlockAchievement('combo5'); }
+function unlockAchievement(key) { achievements[key].unlocked = true; const ach = achievements[key]; const popup = document.getElementById('achievement-popup'); popup.innerHTML = `🏆 ${ach.title}<br><small>${ach.description}</small>`; popup.style.opacity = '1'; popup.style.top = '30px'; setTimeout(() => { popup.style.opacity = '0'; popup.style.top = '20px'; }, 3000); gs.score += 250; document.getElementById('score-num').textContent = gs.score.toLocaleString(); }
+
+// ─ KEYBOARD HELP TOGGLE ─
+function toggleHelp() {
+    const helpPanel = document.getElementById('keyboard-help');
+    helpPanel.style.display = helpPanel.style.display === 'none' || helpPanel.style.display === '' ? 'block' : 'none';
+}
+
+// ─ CONTROLS FOR PC (Keyboard + Mouse) ─
+const keys = {};
+let mouseLocked = false;
+
+document.addEventListener('keydown', e => { 
+    keys[e.code] = true; 
+    
+    // Shooting
+    if ((e.code === 'Space' || e.code === 'KeyF' || e.code === 'Mouse0') && gs.running) {
+        isFiring = true;
+        const weapon = weapons[currentWeapon];
+        if (weapon.autoFire) {
+            shoot();
+            autoFireInterval = setInterval(() => {
+                if (isFiring && gs.running) shoot();
+            }, weapon.fireRate * 15);
+        } else {
+            shoot();
+        }
+        e.preventDefault();
+    }
+    
+    // Reload
+    if (e.code === 'KeyR') { startReload(); e.preventDefault(); }    
+    // Grenade
+    if (e.code === 'KeyG') { throwGrenade(); e.preventDefault(); }
+    
+    // Mercenary
+    if (e.code === 'KeyM') { deployMercenary(); e.preventDefault(); }
+    
+    // Weapon switching
+    if (e.code === 'Digit1') equipWeapon('pistol');
+    if (e.code === 'Digit2') equipWeapon('shotgun');
+    if (e.code === 'Digit3') equipWeapon('ak47');
+    if (e.code === 'Digit4') equipWeapon('ak117');
+    if (e.code === 'Digit5') equipWeapon('smg');
+    if (e.code === 'Digit6') equipWeapon('m4a1');
+    
+    // Shop toggle
+    if (e.code === 'Tab' || e.code === 'KeyI') {
+        if (document.getElementById('shop-ui').style.display === 'flex') {
+            closeShop();
+        } else if (gs.running) {
+            openShop();
+        }
+        e.preventDefault();
+    }
+    
+    // Inventory toggle
+    if (e.code === 'KeyE') {
+        if (document.getElementById('inventory-ui').style.display === 'flex') {
+            closeInventory();
+        } else if (gs.running) {
+            openInventory();
+        }
+        e.preventDefault();
+    }
+    
+    // Help toggle
+    if (e.code === 'KeyH') {
+        toggleHelp();
+        e.preventDefault();
+    }
+});
+
+document.addEventListener('keyup', e => { 
+    keys[e.code] = false;
+    
+    if (e.code === 'Space' || e.code === 'KeyF' || e.code === 'Mouse0') {
+        isFiring = false;
+        if (autoFireInterval) {
+            clearInterval(autoFireInterval);
+            autoFireInterval = null;        }
+    }
+});
+
+// Mouse look for PC
+document.addEventListener('mousemove', e => { 
+    if (!gs.running || !mouseLocked) return; 
+    const mx = e.movementX * 0.004; 
+    const my = e.movementY * 0.0035; 
+    gs.camYaw -= mx; gs.camPitch -= my; 
+    swayX = THREE.MathUtils.lerp(swayX, mx * 18, 0.2); 
+    swayY = THREE.MathUtils.lerp(swayY, my * 18, 0.2); 
+    gs.camPitch = Math.max(-Math.PI / 3, Math.min(Math.PI / 4, gs.camPitch)); 
+});
+
+// Pointer lock for FPS controls
+canvas.addEventListener('click', () => { 
+    if (gs.running && document.pointerLockElement !== canvas) {
+        canvas.requestPointerLock?.();
+    }
+});
+
+document.addEventListener('pointerlockchange', () => {
+    mouseLocked = document.pointerLockElement === canvas;
+});
+
+document.addEventListener('pointerlockerror', () => {
+    console.log('Pointer lock failed');
+});
+
+// Mouse click to shoot
+canvas.addEventListener('mousedown', e => {
+    if (e.button === 0 && gs.running) { // Left click
+        isFiring = true;
+        const weapon = weapons[currentWeapon];
+        if (weapon.autoFire) {
+            shoot();
+            autoFireInterval = setInterval(() => {
+                if (isFiring && gs.running) shoot();
+            }, weapon.fireRate * 15);
+        } else {
+            shoot();
+        }
+    }
+});
+
+canvas.addEventListener('mouseup', e => {
+    if (e.button === 0) {
+        isFiring = false;
+        if (autoFireInterval) {            clearInterval(autoFireInterval);
+            autoFireInterval = null;
+        }
+    }
+});
+
+// ─ LIGHTS UPDATE ─
+let lt = 0;
+function updateLights() { lt += 0.015; pl1.position.x = Math.sin(lt * 0.5) * 10; pl1.position.z = Math.cos(lt * 0.5) * 10; pl2.position.x = Math.cos(lt * 0.6) * 10; pl2.position.z = Math.sin(lt * 0.6) * 10; pl3.intensity = 1.5 + Math.sin(lt * 0.8) * 0.5; }
+
+// ─ PLAYER MOVEMENT ─
+function updatePlayer() {
+    let baseSpd = gs.speedBoost ? 0.05 : 0.035; 
+    if (gs.movementEnhanced) baseSpd *= 1.35;
+    
+    let dx = 0, dy = 0;
+    if (keys['KeyW'] || keys['ArrowUp']) dy = -1;
+    if (keys['KeyS'] || keys['ArrowDown']) dy = 1;
+    if (keys['KeyA'] || keys['ArrowLeft']) dx = -1;
+    if (keys['KeyD'] || keys['ArrowRight']) dx = 1;
+    
+    if (dx !== 0 || dy !== 0) {
+        camera.getWorldDirection(viewDir); viewDir.y = 0; viewDir.normalize();
+        sideDir.set(0, 1, 0).cross(viewDir).normalize();
+        
+        pVelX += (sideDir.x * dx - viewDir.x * dy) * baseSpd;
+        pVelZ += (sideDir.z * dx - viewDir.z * dy) * baseSpd;
+    }
+    
+    camera.position.x += pVelX;
+    camera.position.z += pVelZ;
+        pVelX *= FRICTION;
+    pVelZ *= FRICTION;
+
+    const B = AR - 1.5;
+    if (camera.position.x < -B) { camera.position.x = -B; pVelX = 0; }
+    if (camera.position.x > B) { camera.position.x = B; pVelX = 0; }
+    if (camera.position.z < -B) { camera.position.z = -B; pVelZ = 0; }
+    if (camera.position.z > B) { camera.position.z = B; pVelZ = 0; }
+    
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y = gs.camYaw;
+    camera.rotation.x = gs.camPitch;
+    
+    if (shake > 0.001) { camera.rotation.y += (Math.random() - 0.5) * shake; camera.rotation.x += (Math.random() - 0.5) * shake; shake *= 0.88; }
+    
+    swayX *= 0.8; swayY *= 0.8;
+    const wp = document.getElementById('weapon');
+    wp.style.transform = `translate(${swayX * 0.5}px, ${swayY * 0.5}px)`;
+        if (gs.speedBoostTimer > 0) { gs.speedBoostTimer--; if (gs.speedBoostTimer <= 0) gs.speedBoost = false; }
+    if (gs.armorTimer > 0) { gs.armorTimer--; if (gs.armorTimer <= 0) gs.armorActive = false; }
+}
+
+// ─ MINIMAP ─
+const minimapCanvas = document.getElementById('minimap-canvas');
+const minimapCtx = minimapCanvas.getContext('2d');
+function updateMinimap() {
+    minimapCtx.clearRect(0, 0, 110, 110);
+    minimapCtx.fillStyle = 'rgba(0, 0, 0, 0.6)';
+    minimapCtx.fillRect(0, 0, 110, 110);
+    const scale = 110 / (AR * 2);
+    const cx = 55, cy = 55;
+    
+    minimapCtx.fillStyle = '#00ff00';
+    minimapCtx.beginPath();
+    minimapCtx.arc(cx + camera.position.x * scale, cy + camera.position.z * scale, 3, 0, Math.PI * 2);
+    minimapCtx.fill();
+    
+    minimapCtx.fillStyle = '#ff0000';
+    enemies.forEach(en => { if (!en.alive) return; minimapCtx.beginPath(); minimapCtx.arc(cx + en.g.position.x * scale, cy + en.g.position.z * scale, 2, 0, Math.PI * 2); minimapCtx.fill(); });
+    
+    minimapCtx.fillStyle = '#00ff44';
+    gs.mercenaries.forEach(m => { if (!m.alive) return; minimapCtx.beginPath(); minimapCtx.arc(cx + m.g.position.x * scale, cy + m.g.position.z * scale, 2, 0, Math.PI * 2); minimapCtx.fill(); });
+}
+
+function shootEnemyBullet(startPos, targetPos) { const bulletMesh = new THREE.Mesh(new THREE.SphereGeometry(0.12, 6, 6), new THREE.MeshBasicMaterial({ color: 0xff3300 })); bulletMesh.position.copy(startPos); bulletMesh.position.y += 1.2; const dir = new THREE.Vector3().copy(targetPos).sub(bulletMesh.position).normalize(); scene.add(bulletMesh); enemyBullets.push({ mesh: bulletMesh, dir: dir, speed: 0.4, life: 130 }); beep('square', 150, 0.08, 0.04); }
+function updateEnemyBullets() { for (let i = enemyBullets.length - 1; i >= 0; i--) { const b = enemyBullets[i]; b.mesh.position.addScaledVector(b.dir, b.speed); b.life--; if (b.mesh.position.distanceTo(camera.position) < 1.0) { takeDamage(4 + Math.random() * 5); scene.remove(b.mesh); enemyBullets.splice(i, 1); continue; } if (b.life <= 0) { scene.remove(b.mesh); enemyBullets.splice(i, 1); } } }
+
+const tv = new THREE.Vector3();
+function updateEnemies() {     enemies.forEach(en => { 
+        if (!en.alive) return; 
+        
+        let targetPos = camera.position.clone();
+        let targetDist = en.g.position.distanceTo(camera.position);
+        
+        gs.mercenaries.forEach(merc => {
+            if (!merc.alive) return;
+            const distToMerc = en.g.position.distanceTo(merc.g.position);
+            if (distToMerc < targetDist) {
+                targetDist = distToMerc;
+                targetPos = merc.g.position.clone();
+            }
+        });
+        
+        tv.set(targetPos.x, 0, targetPos.z); 
+        const p = en.g.position, dir = tv.clone().sub(p), dist = dir.length(); 
+        if (dist > 7) { 
+            dir.normalize(); 
+            p.x += dir.x * en.speed;             p.z += dir.z * en.speed; 
+        } 
+        en.g.position.y = Math.sin(Date.now() * 0.0025 + en.bob) * 0.06; 
+        en.g.rotation.y = Math.atan2(targetPos.x - p.x, targetPos.z - p.z); 
+        en.g.children.forEach(c => { 
+            if (c.geometry && c.geometry.type === 'PlaneGeometry') c.lookAt(camera.position); 
+        }); 
+        if (en.hit > 0) { 
+            en.hit--; 
+            en.g.traverse(c => { 
+                if (c.isMesh && c.material && c.material.emissive) { 
+                    c.material.emissive.setHex(en.hit > 0 ? 0xff2200 : 0x000000); 
+                    c.material.emissiveIntensity = en.hit > 0 ? 0.5 : 0; 
+                } 
+            }); 
+        } 
+        if (dist < 40) { 
+            en.sTmr--; 
+            if (en.sTmr <= 0) { 
+                en.sTmr = 60 + Math.random() * 70; 
+                shootEnemyBullet(en.g.position, targetPos); 
+            } 
+        } 
+    }); 
+}
+
+function spawnWave(w) { const n = Math.min(3 + w * 2, 18); for (let i = 0; i < n; i++) { const a = (i / n) * Math.PI * 2 + Math.random() * 0.5, r = 28 - Math.random() * 5; mkEnemy(Math.cos(a) * r, Math.sin(a) * r, w); } const el = document.getElementById('wave-notif'); el.textContent = `WAVE ${w}`; el.style.opacity = '1'; setTimeout(() => el.style.opacity = '0', 2200); document.getElementById('wave-txt').textContent = `WAVE ${w}`; }
+
+// ─ ENHANCED WEATHER SYSTEM ─
+const rainCanvas = document.getElementById('rain-canvas');const rainCtx = rainCanvas.getContext('2d');
+const fogOverlay = document.getElementById('fog-overlay');
+const stormFlash = document.getElementById('storm-flash');
+const rainDrops = [];
+let weatherState = {
+    type: 'clear',
+    intensity: 0,
+    transition: 0,
+    stormTimer: 0,
+    changeTimer: 0
+};
+
+function resizeRainCanvas() {
+    rainCanvas.width = window.innerWidth;
+    rainCanvas.height = window.innerHeight;
+}
+window.addEventListener('resize', resizeRainCanvas);
+resizeRainCanvas();
+
+function initWeather() {
+    weatherState = {        type: 'clear',
+        intensity: 0,
+        transition: 0,
+        stormTimer: 0,
+        changeTimer: 300 + Math.random() * 600
+    };
+}
+
+function updateWeather() {
+    // تغيير الطقس بشكل عشوائي
+    weatherState.changeTimer--;
+    if (weatherState.changeTimer <= 0) {
+        const types = ['clear', 'lightRain', 'rain', 'fog', 'storm'];
+        const weights = [40, 25, 20, 10, 5];
+        const total = weights.reduce((a,b) => a+b);
+        let rand = Math.random() * total;
+        let newType = 'clear';
+        for (let i = 0; i < types.length; i++) {
+            rand -= weights[i];
+            if (rand <= 0) { newType = types[i]; break; }
+        }
+        weatherState.type = newType;
+        weatherState.intensity = 0;
+        weatherState.transition = 120;
+        weatherState.changeTimer = 400 + Math.random() * 800;
+        
+        if (newType === 'storm') weatherState.stormTimer = 200 + Math.random() * 100;
+    }
+        // الانتقال التدريجي
+    if (weatherState.transition > 0) {
+        weatherState.transition--;
+        weatherState.intensity = 1 - weatherState.transition / 120;
+    }
+    
+    // تحديث الضباب
+    let fogDensity = 0.02;
+    let fogOpacity = 0;
+    if (weatherState.type === 'fog') {
+        fogDensity = 0.035 + weatherState.intensity * 0.04;
+        fogOpacity = 0.1 + weatherState.intensity * 0.2;
+    } else if (weatherState.type === 'storm') {
+        fogDensity = 0.025 + weatherState.intensity * 0.02;
+        fogOpacity = 0.05 + weatherState.intensity * 0.1;
+    }
+    scene.fog.density = fogDensity;
+    fogOverlay.style.opacity = fogOpacity;
+    
+    // تحديث المطر
+    if (weatherState.type === 'rain' || weatherState.type === 'lightRain' || weatherState.type === 'storm') {
+        const maxDrops = weatherState.type === 'storm' ? 300 : weatherState.type === 'rain' ? 150 : 60;        const spawnRate = weatherState.type === 'storm' ? 8 : weatherState.type === 'rain' ? 4 : 2;
+        
+        while (rainDrops.length < maxDrops && Math.random() < spawnRate / 60) {
+            rainDrops.push({
+                x: Math.random() * rainCanvas.width,
+                y: -10,
+                speed: 8 + Math.random() * (weatherState.type === 'storm' ? 12 : 6),
+                length: 15 + Math.random() * 20,
+                opacity: 0.3 + Math.random() * 0.4
+            });
+        }
+        
+        // تحديث قطرات المطر
+        for (let i = rainDrops.length - 1; i >= 0; i--) {
+            const d = rainDrops[i];
+            d.y += d.speed;
+            if (d.y > rainCanvas.height) {
+                d.y = -10;
+                d.x = Math.random() * rainCanvas.width;
+            }
+        }
+    } else {
+        rainDrops.length = 0;
+    }
+    
+    // البرق في العواصف
+    if (weatherState.type === 'storm' && weatherState.stormTimer > 0) {
+        weatherState.stormTimer--;        if (Math.random() < 0.008) {
+            stormFlash.style.opacity = '1';
+            setTimeout(() => { stormFlash.style.opacity = '0'; }, 80);
+            shake = 0.15;
+            beep('square', 80, 0.3, 0.15);
+        }
+    }
+    
+    // تحديث كثافة الضباب في Three.js بناءً على الطقس
+    if (weatherState.type === 'rain' || weatherState.type === 'storm') {
+        scene.fog.color.setHex(0x1a2a3a);
+    } else {
+        scene.fog.color.setHex(0x0a0a1a);
+    }
+}
+
+function renderRain() {
+    rainCtx.clearRect(0, 0, rainCanvas.width, rainCanvas.height);
+    
+    if (rainDrops.length === 0) return;
+    
+    rainCtx.strokeStyle = weatherState.type === 'storm' ? '#88aacc' : '#6699bb';
+    rainCtx.lineWidth = weatherState.type === 'storm' ? 1.5 : 1;    
+    rainDrops.forEach(d => {
+        rainCtx.globalAlpha = d.opacity * weatherState.intensity;
+        rainCtx.beginPath();
+        rainCtx.moveTo(d.x, d.y);
+        rainCtx.lineTo(d.x, d.y + d.length);
+        rainCtx.stroke();
+    });
+    rainCtx.globalAlpha = 1;
+}
+
+// ─ COMBAT SYSTEM ─
+const ray = new THREE.Raycaster();
+const AIM = 0.2;
+
+function shoot() {
+    if (!gs.running || gs.reloading) return;
+    if (gs.ammo <= 0) { startReload(); return; }
+    const weapon = weapons[currentWeapon];
+    if (gs.cd > 0) return;
+    
+    initAudio(); playShot();
+    gs.ammo--; 
+    weapon.currentClip = gs.ammo; // تحديث الذخيرة في المخزون
+    gs.cd = weapon.fireRate;
+    updateAmmoUI();
+        shake = weapon.fireRate < 10 ? 0.08 : 0.06;
+    const ff = document.getElementById('fire-flash');
+    ff.style.opacity = '1';
+    setTimeout(() => ff.style.opacity = '0', 45);
+    
+    const w = document.getElementById('weapon');
+    w.style.transform = 'translate(8px,-8px) rotate(-4deg)';
+    setTimeout(() => w.style.transform = '', 100);
+    
+    let best = null, bd = Infinity;
+    enemies.filter(e => e.alive).forEach(en => {
+        const p = en.g.position.clone().add(new THREE.Vector3(0, 1.5, 0)).project(camera);
+        const d = Math.sqrt(p.x * p.x + p.y * p.y);
+        const wd = camera.position.distanceTo(en.g.position);
+        const effectiveAim = AIM;
+        if (d < effectiveAim && wd < (weapon.name === 'شوتجان' ? 20 : 45) && d < bd) { bd = d; best = en; }
+    });
+    
+    let baseDmg = weapon.damage;
+    if (gs.damageBoost) baseDmg = Math.floor(baseDmg * 1.5);
+    
+    if (best) {
+        const dmg = baseDmg + Math.floor(Math.random() * (weapon.damage * 0.3));
+        best.hp -= dmg; best.hit = 10;        sparks(best.g.position.clone().add(new THREE.Vector3(0, 1.5, 0)), weapon.name === 'شوتجان' ? 15 : 10);
+        playHit(); showHit();
+        if (best.hp <= 0) killEnemy(best);
+        else updateEnemyBar(best);
+    } else {
+        ray.setFromCamera(new THREE.Vector2(0, 0), camera);
+        const ms = [];
+        enemies.filter(e => e.alive).forEach(en => en.g.traverse(c => { if (c.isMesh) ms.push(c); }));
+        const its = ray.intersectObjects(ms);
+        if (its.length > 0) {
+            sparks(its[0].point, weapon.name === 'شوتجان' ? 12 : 8);
+            playHit(); showHit();
+            enemies.filter(e => e.alive).forEach(en => {
+                if (en.g.children.includes(its[0].object) || en.g.children.some(c => c === its[0].object)) {
+                    const dmg = baseDmg + Math.floor(Math.random() * (weapon.damage * 0.25));
+                    en.hp -= dmg; en.hit = 8;
+                    if (en.hp <= 0) killEnemy(en);
+                    else updateEnemyBar(en);
+                }
+            });
+        }
+    }
+}
+
+function killEnemy(en) {
+    en.alive = false;    sparks(en.g.position.clone().add(new THREE.Vector3(0, 1, 0)), 15, 0xff4400, 0xff8800);
+    scene.remove(en.g);
+    
+    gs.score += 40 + gs.wave * 20;
+    gs.kills++;
+    document.getElementById('score-num').textContent = gs.score.toLocaleString();
+    
+    const f = document.getElementById('killfeed'), d = document.createElement('div');
+    d.className = 'kf';
+    d.textContent = `✗ ${KNAMES[gs.kills % KNAMES.length]} مقتول`;
+    f.appendChild(d);
+    setTimeout(() => d.remove(), 2500);
+    
+    incrementCombo();
+    checkAchievements();
+    
+    // ❌ تم إزالة الحصول على الذخيرة من قتل الأعداء
+    
+    if (Math.random() < 0.12 && grenadeCount < 3) {
+        grenadeCount++;
+        updateGrenadeUI();
+    }
+    
+    if (gs.kills % 5 === 0) activatePowerUp();
+    if (!enemies.some(e => e.alive)) setTimeout(() => nextWave(), 1800);}
+
+// ─ GRENADE SYSTEM - 3 SECONDS TIMER ─
+const grenades = [];
+let grenadeCount = 3;
+
+function throwGrenade() {
+    if (!gs.running || grenadeCount <= 0) return;
+    grenadeCount--;
+    updateGrenadeUI();
+    
+    const direction = new THREE.Vector3();
+    camera.getWorldDirection(direction);
+    
+    const grenade = {
+        mesh: new THREE.Mesh(
+            new THREE.SphereGeometry(0.18, 8, 8),
+            new THREE.MeshStandardMaterial({ color: 0x334433, roughness: 0.5, metalness: 0.6, emissive: 0x112211, emissiveIntensity: 0.3 })
+        ),
+        position: camera.position.clone().add(direction.clone().multiplyScalar(2.5)),
+        velocity: direction.clone().multiplyScalar(0.6),
+        // ⏱️ 3 ثوان = 180 إطار عند 60 فريم/ثانية
+        timer: 180,
+        exploded: false
+    };    
+    grenade.mesh.position.copy(grenade.position);
+    grenade.mesh.castShadow = true;
+    scene.add(grenade.mesh);
+    grenades.push(grenade);
+    beep('square', 300, 0.08, 0.12);
+}
+
+function updateGrenades() {
+    for (let i = grenades.length - 1; i >= 0; i--) {
+        const g = grenades[i];
+        if (!g.exploded) {
+            g.position.add(g.velocity);
+            g.velocity.y -= 0.01;
+            g.mesh.position.copy(g.position);
+            if (g.position.y <= 0) { g.position.y = 0; g.velocity.y = 0; g.velocity.multiplyScalar(0.2); }
+            g.timer--;
+            // ⏱️ الانفجار بعد 3 ثوان بالضبط
+            if (g.timer <= 0) explodeGrenade(g);
+        }
+    }
+}
+
+function explodeGrenade(grenade) {
+    grenade.exploded = true;
+    const explosionLight = new THREE.PointLight(0xff6600, 6, 12);    explosionLight.position.copy(grenade.position);
+    scene.add(explosionLight);
+    setTimeout(() => scene.remove(explosionLight), 400);
+    
+    sparks(grenade.position, 25, 0xff6600, 0xff8800);
+    shake = 0.35;
+    
+    enemies.forEach(enemy => {
+        if (!enemy.alive) return;
+        const distance = enemy.g.position.distanceTo(grenade.position);
+        if (distance < 6) {
+            const damage = Math.floor(90 * (1 - distance / 6));
+            enemy.hp -= damage;
+            enemy.hit = 18;
+            if (enemy.hp <= 0) killEnemy(enemy);
+            else updateEnemyBar(enemy);
+        }
+    });
+    
+    scene.remove(grenade.mesh);
+    grenades.splice(grenades.indexOf(grenade), 1);
+    playExplosionSound();
+    
+    setTimeout(() => { if (grenadeCount < 3) { grenadeCount++; updateGrenadeUI(); } }, 8000);}
+
+function playExplosionSound() {
+    if (!actx) return;
+    const buffer = actx.createBuffer(1, actx.sampleRate * 0.4, actx.sampleRate);
+    const data = buffer.getChannelData(0);
+    for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * Math.exp(-i / (actx.sampleRate * 0.08));
+    const source = actx.createBufferSource(), gain = actx.createGain();
+    source.buffer = buffer;
+    gain.gain.setValueAtTime(0.9, actx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + 0.4);
+    source.connect(gain); gain.connect(actx.destination); source.start();
+}
+
+function updateGrenadeUI() {
+    const btn = document.getElementById('grenade-btn');
+    btn.textContent = `💣 ${grenadeCount}`;
+    btn.style.opacity = grenadeCount > 0 ? '1' : '0.5';
+}
+
+// ─ GAME LOOP ─
+function animate() {
+    requestAnimationFrame(animate);
+    if (gs.running) {
+        updatePlayer(); updateEnemies(); updateParts(); updateLights();
+        updateEnemyBullets(); updateAllyBullets(); updateGrenades(); updateMercenaries();
+        updateWeather(); renderRain(); updateMinimap();        if (gs.cd > 0) gs.cd--;
+        if (gs.reloading) { gs.reloadTmr--; if (gs.reloadTmr <= 0) finishReload(); }
+    }
+    renderer.render(scene, camera);
+}
+animate();
+
+function startGame() { initAudio(); initWeather(); resizeRainCanvas(); document.getElementById('menu').style.display = 'none'; resetGame(); }
+function retryGame() { document.getElementById('gameover').style.display = 'none'; resetGame(); }
+function resetGame() {
+    enemies.forEach(e => scene.remove(e.g)); enemies.length = 0;
+    enemyBullets.forEach(b => scene.remove(b.mesh)); enemyBullets.length = 0;
+    allyBullets.forEach(b => scene.remove(b.mesh)); allyBullets.length = 0;
+    parts.forEach(p => scene.remove(p.mesh)); parts.length = 0;
+    grenades.forEach(g => scene.remove(g.mesh)); grenades.length = 0;
+    gs.mercenaries.forEach(m => scene.remove(m.g)); gs.mercenaries.length = 0;
+    rainDrops.length = 0;
+    
+    pVelX = 0; pVelZ = 0;
+    
+    Object.assign(gs, { running: true, hp: 100, maxHp: 100, ammo: 30, reserve: 120, score: 0, wave: 1, kills: 0, reloading: false, cd: 0, camYaw: 0, camPitch: 0, damageBoost: false, speedBoost: false, speedBoostTimer: 0, armorActive: false, armorTimer: 0, movementEnhanced: false, mercenaries: [], mercenaryCount: 0, mercenariesInventory: 0, eliteMercenariesInventory: 0 });
+    camera.position.set(0, 1.8, 0);
+    grenadeCount = 3;    currentWeapon = 'pistol';
+    isFiring = false;
+    if (autoFireInterval) { clearInterval(autoFireInterval); autoFireInterval = null; }
+    
+    // Reset weapons ownership and ammo (keep pistol)
+    Object.keys(weapons).forEach(key => {
+        if (key !== 'pistol') {
+            weapons[key].owned = false;
+            weapons[key].currentClip = weapons[key].clipSize;
+            weapons[key].reserveAmmo = weapons[key].reserve;
+        }
+    });
+    
+    initWeather();
+    updateHpUI(); updateAmmoUI(); updateGrenadeUI(); updateMercenaryUI(); updateInventoryUI();
+    document.getElementById('score-num').textContent = '0';
+    document.getElementById('reload-bar').style.display = 'none';
+    document.getElementById('maxhp-display').textContent = gs.maxHp;
+    
+    // Reset shop buttons
+    Object.keys(weapons).forEach(key => {
+        const btn = document.getElementById(`btn-${key}`);
+        if (btn) {
+            const w = weapons[key];
+            if (w.owned) {
+                btn.textContent = '✓ مملوك';
+                btn.disabled = true;
+                btn.classList.remove('locked');            } else if (w.waveLock) {
+                btn.textContent = `🔒 الموجة ${w.waveLock}`;
+                btn.disabled = true;
+                btn.classList.add('locked');
+            } else {
+                btn.textContent = 'شراء';
+                btn.disabled = false;
+                btn.classList.remove('locked');
+            }
+        }
+    });
+    
+    spawnWave(1);
+}
+
+window.addEventListener('resize', () => { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); resizeRainCanvas(); });
+updateGrenadeUI();
+updateMercenaryUI();
+</script>
+</body>
+</html>
