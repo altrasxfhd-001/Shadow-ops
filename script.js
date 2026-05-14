@@ -805,8 +805,8 @@ function updatePlayer() {
     let dx = joy.dx || 0, dy = joy.dy || 0;
     if (keys['KeyW'] || keys['ArrowUp']) dy = -1;
     if (keys['KeyS'] || keys['ArrowDown']) dy = 1;
-    if (keys['KeyA'] || keys['ArrowLeft']) dx = -1;
-    if (keys['KeyD'] || keys['ArrowRight']) dx = 1;
+    if (keys['KeyA'] || keys['ArrowLeft']) dx = 1;
+    if (keys['KeyD'] || keys['ArrowRight']) dx = -1;
 
     // improved strafing: stronger left-right, decoupled from forward speed
     const viewDir = new THREE.Vector3(); camera.getWorldDirection(viewDir); viewDir.y = 0; viewDir.normalize();
