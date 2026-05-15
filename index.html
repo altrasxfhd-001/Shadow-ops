@@ -2458,47 +2458,74 @@ canvas.addEventListener('mouseup', e => {
 let lt = 0;
 function updateLights() { lt += 0.015; pl1.position.x = Math.sin(lt * 0.5) * 10; pl1.position.z = Math.cos(lt * 0.5) * 10; pl2.position.x = Math.cos(lt * 0.6) * 10; pl2.position.z = Math.sin(lt * 0.6) * 10; pl3.intensity = 1.5 + Math.sin(lt * 0.8) * 0.5; }
 
-// ─ PLAYER MOVEMENT ─
-function updatePlayer() {
-    let baseSpd = gs.speedBoost ? 0.05 : 0.035; 
+ // -- player movment --
+function updatePlayer(dt) { // dt هو Delta Time
+    // 1. تحديد السرعة الأساسية
+    let baseSpd = gs.speedBoost ? 0.08 : 0.05;
     if (gs.movementEnhanced) baseSpd *= 1.35;
-    
-    let dx = 0, dy = 0;
-    if (keys['KeyW'] || keys['ArrowUp']) dy = -1;
-    if (keys['KeyS'] || keys['ArrowDown']) dy = 1;
-    if (keys['KeyA'] || keys['ArrowLeft']) dx = 1;
-    if (keys['KeyD'] || keys['ArrowRight']) dx = -1;
-    
-    if (dx !== 0 || dy !== 0) {
-        camera.getWorldDirection(viewDir); viewDir.y = 0; viewDir.normalize();
-        sideDir.set(0, 1, 0).cross(viewDir).normalize();
-        
-        pVelX += (sideDir.x * dx - viewDir.x * dy) * baseSpd;
-        pVelZ += (sideDir.z * dx - viewDir.z * dy) * baseSpd;
+
+    let inputX = 0; // الاتجاه الجانبي
+    let inputZ = 0; // الاتجاه الأمامي
+
+    // 2. قراءة المدخلات (تصحيح الاتجاهات العكسية)
+    if (keys['KeyW'] || keys['ArrowUp'])    inputZ = 1;  // للأمام
+    if (keys['KeyS'] || keys['ArrowDown'])  inputZ = -1; // للخلف
+    if (keys['KeyA'] || keys['ArrowLeft'])  inputX = -1; // لليسار
+    if (keys['KeyD'] || keys['ArrowRight']) inputX = 1;  // لليمين
+
+    // 3. معالجة الحركة القطرية (Normalization)
+    let length = Math.sqrt(inputX * inputX + inputZ * inputZ);
+    if (length > 0) {
+        inputX /= length;
+        inputZ /= length;
     }
+
+    // 4. حساب اتجاهات الكاميرا
+    camera.getWorldDirection(viewDir);
+    viewDir.y = 0;
+    viewDir.normalize();
     
+    // حساب المتجه الجانبي (يمين اللاعب)
+    sideDir.set(0, 1, 0).cross(viewDir).normalize();
+
+    // 5. تطبيق القوة (تصحيح الحركة العكسية هنا)
+    if (length > 0) {
+        // الحركة = (الاتجاه الأمامي * الإدخال الطولي) + (الاتجاه الجانبي * الإدخال العرضي)
+        pVelX += (viewDir.x * inputZ + sideDir.x * inputX) * baseSpd;
+        pVelZ += (viewDir.z * inputZ + sideDir.z * inputX) * baseSpd;
+    }
+
+    // 6. تحديث الموقع والاحتكاك
     camera.position.x += pVelX;
     camera.position.z += pVelZ;
-        pVelX *= FRICTION;
+    pVelX *= FRICTION;
     pVelZ *= FRICTION;
 
+    // 7. حدود العالم (Bounds)
     const B = AR - 1.5;
-    if (camera.position.x < -B) { camera.position.x = -B; pVelX = 0; }
-    if (camera.position.x > B) { camera.position.x = B; pVelX = 0; }
-    if (camera.position.z < -B) { camera.position.z = -B; pVelZ = 0; }
-    if (camera.position.z > B) { camera.position.z = B; pVelZ = 0; }
-    
+    camera.position.x = Math.max(-B, Math.min(B, camera.position.x));
+    camera.position.z = Math.max(-B, Math.min(B, camera.position.z));
+
+    // 8. الدوران والـ Shake
     camera.rotation.order = 'YXZ';
     camera.rotation.y = gs.camYaw;
     camera.rotation.x = gs.camPitch;
-    
-    if (shake > 0.001) { camera.rotation.y += (Math.random() - 0.5) * shake; camera.rotation.x += (Math.random() - 0.5) * shake; shake *= 0.88; }
-    
+
+    if (shake > 0.001) {
+        camera.rotation.y += (Math.random() - 0.5) * shake;
+        camera.rotation.x += (Math.random() - 0.5) * shake;
+        shake *= 0.88;
+    }
+
+    // 9. حركة السلاح (Sway)
     swayX *= 0.8; swayY *= 0.8;
-    const wp = document.getElementById('weapon');
-    wp.style.transform = `translate(${swayX * 0.5}px, ${swayY * 0.5}px)`;
-        if (gs.speedBoostTimer > 0) { gs.speedBoostTimer--; if (gs.speedBoostTimer <= 0) gs.speedBoost = false; }
-    if (gs.armorTimer > 0) { gs.armorTimer--; if (gs.armorTimer <= 0) gs.armorActive = false; }
+    weaponElement.style.transform = `translate(${swayX * 0.5}px, ${swayY * 0.5}px)`;
+
+    // 10. المؤقتات (Timers)
+    if (gs.speedBoostTimer > 0) {
+        gs.speedBoostTimer--;
+        if (gs.speedBoostTimer <= 0) gs.speedBoost = false;
+    }
 }
 
 // ─ MINIMAP ─
