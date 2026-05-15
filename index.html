@@ -2458,85 +2458,49 @@ canvas.addEventListener('mouseup', e => {
 let lt = 0;
 function updateLights() { lt += 0.015; pl1.position.x = Math.sin(lt * 0.5) * 10; pl1.position.z = Math.cos(lt * 0.5) * 10; pl2.position.x = Math.cos(lt * 0.6) * 10; pl2.position.z = Math.sin(lt * 0.6) * 10; pl3.intensity = 1.5 + Math.sin(lt * 0.8) * 0.5; }
 
- // -- player movment --
-// 1. التعريفات الخارجية (توضع مرة واحدة فقط خارج الدالة)
-const _vDir = new THREE.Vector3();
-const _sDir = new THREE.Vector3();
-let pVelX = 0;
-let pVelZ = 0;
-const FRICTION = 0.88; // معامل الاحتكاك
-
+// ─ PLAYER MOVEMENT ─
 function updatePlayer() {
-    // 2. حساب السرعة بناءً على حالة اللاعب (Boost/Enhanced)
-    let baseSpd = gs.speedBoost ? 0.05 : 0.035;
-    if (gs.movementEnhanced) baseSpd *= 1.35;
+    let baseSpd = gs.speedBoost ? 0.05 : 0.035; 
+    if (gs.movementEnhanced) baseSpd *= 1.35;
+    
+    let dx = 0, dy = 0;
+    if (keys['KeyW'] || keys['ArrowUp']) dy = -1;
+    if (keys['KeyS'] || keys['ArrowDown']) dy = 1;
+    if (keys['KeyA'] || keys['ArrowLeft']) dx = -1;
+    if (keys['KeyD'] || keys['ArrowRight']) dx = 1;
+    
+    if (dx !== 0 || dy !== 0) {
+        camera.getWorldDirection(viewDir); viewDir.y = 0; viewDir.normalize();
+        sideDir.set(0, 1, 0).cross(viewDir).normalize();
+        
+        pVelX += (sideDir.x * dx - viewDir.x * dy) * baseSpd;
+        pVelZ += (sideDir.z * dx - viewDir.z * dy) * baseSpd;
+    }
+    
+    camera.position.x += pVelX;
+    camera.position.z += pVelZ;
+        pVelX *= FRICTION;
+    pVelZ *= FRICTION;
 
-    let moveF = 0; 
-    let moveS = 0;
-
-    // 3. قراءة المدخلات (W, S, A, D)
-    if (keys['KeyW'] || keys['ArrowUp'])    moveF = 1;
-    if (keys['KeyS'] || keys['ArrowDown'])  moveF = -1;
-    if (keys['KeyA'] || keys['ArrowLeft'])  moveS = -1;
-    if (keys['KeyD'] || keys['ArrowRight']) moveS = 1;
-
-    // 4. موازنة السرعة القطرية (عشان ميبقاش سريع بزيادة في الزوايا)
-    if (moveF !== 0 && moveS !== 0) {
-        moveF *= 0.7071;
-        moveS *= 0.7071;
-    }
-
-    // 5. حساب اتجاه الكاميرا (تجاهل محور Y لمنع الطيران)
-    camera.getWorldDirection(_vDir);
-    _vDir.y = 0;
-    _vDir.normalize();
-
-    // 6. حساب اتجاه "اليمين" الفعلي بناءً على اتجاه النظر
-    _sDir.crossVectors(_vDir, camera.up).normalize();
-
-    // 7. تطبيق القوة على المتجهات (إصلاح العكس)
-    if (moveF !== 0 || moveS !== 0) {
-        // الاتجاه الأمامي + الاتجاه الجانبي
-        pVelX += (_vDir.x * moveF + _sDir.x * moveS) * baseSpd;
-        pVelZ += (_vDir.z * moveF + _sDir.z * moveS) * baseSpd;
-    }
-
-    // 8. تحديث موقع الكاميرا وتطبيق الاحتكاك
-    camera.position.x += pVelX;
-    camera.position.z += pVelZ;
-    
-    pVelX *= FRICTION;
-    pVelZ *= FRICTION;
-
-    // 9. حدود الخريطة (Map Bounds)
-    const B = AR - 1.5; // تعتمد على المتغير AR المعرف في ملفك
-    camera.position.x = Math.max(-B, Math.min(B, camera.position.x));
-    camera.position.z = Math.max(-B, Math.min(B, camera.position.z));
-
-    // 10. تدوير الكاميرا والاهتزاز (Shake)
-    camera.rotation.order = 'YXZ';
-    camera.rotation.y = gs.camYaw;
-    camera.rotation.x = gs.camPitch;
-
-    if (typeof shake !== 'undefined' && shake > 0.001) {
-        camera.rotation.y += (Math.random() - 0.5) * shake;
-        camera.rotation.x += (Math.random() - 0.5) * shake;
-        shake *= 0.88;
-    }
-
-    // 11. تأثير حركة السلاح (Weapon Sway)
-    const weaponElem = document.getElementById('weapon');
-    if (weaponElem) {
-        swayX *= 0.8; swayY *= 0.8;
-        weaponElem.style.transform = `translate(${swayX * 0.5}px, ${swayY * 0.5}px)`;
-    }
-
-    // 12. تحديث مؤقت الـ Boost
-    if (gs.speedBoostTimer > 0) {
-        gs.speedBoostTimer--;
-        if (gs.speedBoostTimer <= 0) gs.speedBoost = false;
-    }
+    const B = AR - 1.5;
+    if (camera.position.x < -B) { camera.position.x = -B; pVelX = 0; }
+    if (camera.position.x > B) { camera.position.x = B; pVelX = 0; }
+    if (camera.position.z < -B) { camera.position.z = -B; pVelZ = 0; }
+    if (camera.position.z > B) { camera.position.z = B; pVelZ = 0; }
+    
+    camera.rotation.order = 'YXZ';
+    camera.rotation.y = gs.camYaw;
+    camera.rotation.x = gs.camPitch;
+    
+    if (shake > 0.001) { camera.rotation.y += (Math.random() - 0.5) * shake; camera.rotation.x += (Math.random() - 0.5) * shake; shake *= 0.88; }
+    
+    swayX *= 0.8; swayY *= 0.8;
+    const wp = document.getElementById('weapon');
+    wp.style.transform = `translate(${swayX * 0.5}px, ${swayY * 0.5}px)`;
+        if (gs.speedBoostTimer > 0) { gs.speedBoostTimer--; if (gs.speedBoostTimer <= 0) gs.speedBoost = false; }
+    if (gs.armorTimer > 0) { gs.armorTimer--; if (gs.armorTimer <= 0) gs.armorActive = false; }
 }
+
 
 // ─ MINIMAP ─
 const minimapCanvas = document.getElementById('minimap-canvas');
